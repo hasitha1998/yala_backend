@@ -21,7 +21,10 @@ connectDB();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3000', 'https://yourdomain.com'], // Add your frontend URLs
+  credentials: true
+}));
 app.use(bodyParser.json());
 
 // Request logging middleware
@@ -30,9 +33,10 @@ app.use((req, res, next) => {
   next();
 });
 
+// Static file serving (note: this won't work the same way on Vercel)
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-
+// Routes
 app.use("/api/packages", packageRoutes);
 app.use("/api/blogs", blogRoutes);
 app.use("/api/contact", contactRoutes);
@@ -44,13 +48,20 @@ app.use("/api", AvailableJeepsRoutes);
 app.use("/api", bookingRoutes);
 
 app.get("/", (req, res) => {
-  res.send("Server is running!");
+  res.send("Server is running on Vercel!");
 });
 
-
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+app.get("/api", (req, res) => {
+  res.json({ message: "API is working!" });
 });
 
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
+
+// Export for Vercel
+module.exports = app;
