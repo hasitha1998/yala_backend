@@ -1,5 +1,5 @@
-const Package = require("./models/Package");
-require("./config/db");
+import Package from "./models/Package.js";
+import "./config/db.js";
 
 async function testPackageAPI() {
   try {

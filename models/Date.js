@@ -14,4 +14,6 @@ const sharedDates = [
   "2025-07-10",
 ];
 
-module.exports = { privateDates, sharedDates };
+const Date = { privateDates, sharedDates };
+
+export default Date;

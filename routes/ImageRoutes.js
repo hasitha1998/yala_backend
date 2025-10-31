@@ -1,7 +1,9 @@
-const express = require("express");
-const multer = require("multer");
-const path = require("path");
-const Image = require("../models/Image");
+import express from "express";
+import multer from "multer";
+import path from "path";
+import Image from "../models/Image.js";
+import auth from "../middleware/auth.js";
+import admin from "../middleware/admin.js";
 
 const router = express.Router();
 
@@ -12,12 +14,12 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + path.extname(file.originalname));
-  }
+  },
 });
 const upload = multer({ storage });
 
-// Get all images
-router.get("/", async (req, res) => {
+// Get all images (requires authentication)
+router.get("/", auth, async (req, res) => {
   try {
     const images = await Image.find().sort({ createdAt: -1 });
     res.json(images);
@@ -26,8 +28,8 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Upload a new image
-router.post("/", upload.single("image"), async (req, res) => {
+// Upload a new image (admin only)
+router.post("/", [auth, admin], upload.single("image"), async (req, res) => {
   try {
     const { title, category } = req.body;
     const url = req.file ? `/uploads/${req.file.filename}` : req.body.url;
@@ -35,7 +37,7 @@ router.post("/", upload.single("image"), async (req, res) => {
       title,
       url,
       category,
-      featured: false
+      featured: false,
     });
     await image.save();
     res.status(201).json(image);
@@ -44,8 +46,8 @@ router.post("/", upload.single("image"), async (req, res) => {
   }
 });
 
-// Delete an image
-router.delete("/:id", async (req, res) => {
+// Delete an image (admin only)
+router.delete("/:id", [auth, admin], async (req, res) => {
   try {
     await Image.findByIdAndDelete(req.params.id);
     res.json({ success: true });
@@ -54,8 +56,8 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-// Toggle featured
-router.patch("/:id/featured", async (req, res) => {
+// Toggle featured (admin only)
+router.patch("/:id/featured", [auth, admin], async (req, res) => {
   try {
     const image = await Image.findById(req.params.id);
     if (!image) return res.status(404).json({ error: "Image not found" });
@@ -67,4 +69,4 @@ router.patch("/:id/featured", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

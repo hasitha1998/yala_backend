@@ -1,4 +1,5 @@
-const express = require('express');
+import express from 'express';
+
 const router = express.Router();
 
 // Dummy jeep data (replace with DB query for real app)
@@ -15,4 +16,4 @@ router.get('/available-jeeps', (req, res) => {
   res.json({ jeeps: allJeeps });
 });
 
-module.exports = router;
+export default router;
