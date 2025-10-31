@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const availableDateSchema = new mongoose.Schema({
   date: {
@@ -8,4 +8,6 @@ const availableDateSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model('AvailableDate', availableDateSchema);
+const AvailableDate = mongoose.model('AvailableDate', availableDateSchema);
+
+export default AvailableDate;

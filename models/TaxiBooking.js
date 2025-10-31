@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const TaxiBookingSchema = new mongoose.Schema({
   pickupLocation: { type: String, required: true },
@@ -10,4 +10,6 @@ const TaxiBookingSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.model("TaxiBooking", TaxiBookingSchema);
+const TaxiBooking = mongoose.model("TaxiBooking", TaxiBookingSchema);
+
+export default TaxiBooking;

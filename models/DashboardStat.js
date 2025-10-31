@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const dashboardStatSchema = new mongoose.Schema({
   totalBookings: Number,
@@ -13,4 +13,6 @@ const dashboardStatSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model('DashboardStat', dashboardStatSchema);
+const DashboardStat = mongoose.model('DashboardStat', dashboardStatSchema);
+
+export default DashboardStat;

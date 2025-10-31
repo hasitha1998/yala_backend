@@ -1,67 +1,205 @@
-const express = require("express");
-const cors = require("cors");
-const bodyParser = require("body-parser");
-const dotenv = require("dotenv");
+import express from 'express';
+import cors from "cors";
+import bodyParser from "body-parser";
+import dotenv from "dotenv";
 dotenv.config();
-const connectDB = require("./config/db");
-const { default: mongoose } = require("mongoose");
-const packageRoutes = require("./routes/PackageRoutes");
-const blogRoutes = require("./routes/BlogRoutes");
-const contactRoutes = require("./routes/ContactRoutes");
-const adminRoutes = require("./routes/AdminRoutes");
-const dashboardRoutes = require("./routes/DashboardRoutes");
-const imageRoutes = require("./routes/imageRoutes");
-const path = require("path");
-const AvailableJeepsRoutes = require("./routes/routes/AvailableJeepsRoutes");
-const bookingRoutes = require("./routes/BookingRoutes");
+
+import connectDB from "./config/db.js";
+import path from "path";
+import { fileURLToPath } from 'url';
+
+// Import Routes
+import packageRoutes from "./routes/PackageRoutes.js";
+import blogRoutes from "./routes/BlogRoutes.js";
+import contactRoutes from "./routes/ContactRoutes.js";
+import adminRoutes from "./routes/AdminRoutes.js";
+import dashboardRoutes from "./routes/DashboardRoutes.js";
+import imageRoutes from "./routes/ImageRoutes.js";
+import bookingRoutes from "./routes/BookingRoutes.js";
+import dateRoutes from "./routes/DateRoutes.js";
+import availableDatesRoutes from "./routes/AvailableDatesRoutes.js";
 
 // Connect to MongoDB
 connectDB();
 
 const app = express();
 
-// Middleware
+// Get __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// ==========================================
+// CORS Configuration
+// ==========================================
+const allowedOrigins = [
+  "http://localhost:3000",           // ✅ Local development frontend
+  "http://localhost:5173",           // Vite default port
+  "http://localhost:5000",           // Backend local
+  "https://www.yalasafari.com",     // Production domain
+  "https://yalasafari.com",         // Production without www
+  "https://yala-safari-hspl.vercel.app",  // ✅ ADD YOUR VERCEL BACKEND URL
+];
+
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://yourdomain.com'], // Add your frontend URLs
-  credentials: true
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log(`Blocked by CORS: ${origin}`);
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"]
 }));
+
+// ==========================================
+// CORS Configuration (DEVELOPMENT MODE)
+// ==========================================
+// app.use(cors({
+//   origin: true, // ✅ Allow all origins (development only)
+//   credentials: true,
+//   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+//   allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"]
+// }));
+
+//app.options('*', cors());
+// ==========================================
+// Middleware
+// ==========================================
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // Request logging middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  console.log('Request Body:', req.body);
   next();
 });
 
-// Static file serving (note: this won't work the same way on Vercel)
+// Serve static files (uploaded images, etc.)
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Routes
-app.use("/api/packages", packageRoutes);
-app.use("/api/blogs", blogRoutes);
-app.use("/api/contact", contactRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/images", imageRoutes);
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
-app.use("/api", AvailableJeepsRoutes);
-app.use("/api", bookingRoutes);
+// ==========================================
+// API Routes
+// ==========================================
 
+// Health check
 app.get("/", (req, res) => {
-  res.send("Server is running on Vercel!");
-});
-
-app.get("/api", (req, res) => {
-  res.json({ message: "API is working!" });
-});
-
-// For local development
-if (process.env.NODE_ENV !== 'production') {
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  res.json({ 
+    status: "Server is running!",
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      bookings: "/api/bookings",
+      packages: "/api/packages",
+      admin: "/api/admin",
+      blogs: "/api/blogs",
+      contact: "/api/contact",
+      dashboard: "/api/dashboard",
+      images: "/api/images",
+      dates: "/api/availability",
+      availableDates: "/api/available-dates"
+    }
   });
-}
+});
 
-// Export for Vercel
-module.exports = app;
+// API health check
+app.get("/api/health", (req, res) => {
+  res.json({ 
+    status: "OK", 
+    message: "API is working",
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Booking Routes (Most Important - Place First)
+app.use("/api/bookings", bookingRoutes);
+
+// Package Routes
+app.use("/api/packages", packageRoutes);
+
+// Blog Routes
+app.use("/api/blogs", blogRoutes);
+
+// Contact Routes
+app.use("/api/contact", contactRoutes);
+
+// Admin Routes
+app.use("/api/admin", adminRoutes);
+
+// Dashboard Routes
+app.use("/api/dashboard", dashboardRoutes);
+
+// Image Routes
+app.use("/api/images", imageRoutes);
+
+// Date Routes
+app.use("/api", dateRoutes);
+
+// Available Dates Routes
+app.use("/api/available-dates", availableDatesRoutes);
+
+// ==========================================
+// Error Handling Middleware
+// ==========================================
+
+// 404 Handler
+app.use((req, res, next) => {
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.originalUrl} not found`
+  });
+});
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error("Error:", err.stack);
+  
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "Internal Server Error",
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+});
+
+// ==========================================
+// Start Server
+// ==========================================
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log("\n" + "=".repeat(50));
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log("=".repeat(50));
+  console.log("\n📍 Available Endpoints:");
+  console.log(`   Health Check:     http://localhost:${PORT}/api/health`);
+  console.log(`   Bookings:         http://localhost:${PORT}/api/bookings`);
+  console.log(`   Calculate Price:  http://localhost:${PORT}/api/bookings/calculate-price`);
+  console.log(`   Packages:         http://localhost:${PORT}/api/packages`);
+  console.log(`   Admin Login:      http://localhost:${PORT}/api/admin/login`);
+  console.log(`   Contact:          http://localhost:${PORT}/api/contact`);
+  console.log(`   Blogs:            http://localhost:${PORT}/api/blogs`);
+  console.log(`   Dashboard:        http://localhost:${PORT}/api/dashboard`);
+  console.log(`   Images:           http://localhost:${PORT}/api/images`);
+  console.log("\n" + "=".repeat(50) + "\n");
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  console.log('❌ UNHANDLED REJECTION! Shutting down...');
+  console.error(err.name, err.message);
+  process.exit(1);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.log('❌ UNCAUGHT EXCEPTION! Shutting down...');
+  console.error(err.name, err.message);
+  process.exit(1);
+});
+
+export default app;
