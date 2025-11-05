@@ -1,7 +1,7 @@
 import Booking from "../models/Booking.js";
 import Package from "../models/Package.js";
 import asyncHandler from "express-async-handler";
-import { sendBookingEmailToAdmin, sendBookingConfirmationToCustomer } from "../config/emailConfigResend.js";
+import { sendBookingEmailToAdmin, sendBookingConfirmationToCustomer } from "../config/emailConfig.js";
 
 // Helper function to calculate pricing based on reservation type
 const calculatePricing = async (bookingData) => {
