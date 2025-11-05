@@ -1,9 +1,27 @@
-import express from 'express';
-import cors from "cors";
-import bodyParser from "body-parser";
+// ========================================
+// 1. LOAD ENVIRONMENT VARIABLES FIRST
+// ========================================
 import dotenv from "dotenv";
 dotenv.config();
 
+// ========================================
+// 2. CHECK ENVIRONMENT VARIABLES
+// ========================================
+console.log('\n' + '='.repeat(50));
+console.log('🔍 ENVIRONMENT VARIABLES CHECK');
+console.log('='.repeat(50));
+console.log('RESEND_API_KEY:', process.env.RESEND_API_KEY ? '✅ Loaded' : '❌ Missing');
+console.log('ADMIN_EMAIL:', process.env.ADMIN_EMAIL || '❌ Missing');
+console.log('MONGO_URI:', process.env.MONGO_URI ? '✅ Loaded' : '❌ Missing');
+console.log('PORT:', process.env.PORT || '5000');
+console.log('='.repeat(50) + '\n');
+
+// ========================================
+// 3. IMPORT EVERYTHING ELSE
+// ========================================
+import express from 'express';
+import cors from "cors";
+import bodyParser from "body-parser";
 import connectDB from "./config/db.js";
 import path from "path";
 import { fileURLToPath } from 'url';
@@ -19,7 +37,9 @@ import bookingRoutes from "./routes/BookingRoutes.js";
 import dateRoutes from "./routes/DateRoutes.js";
 import availableDatesRoutes from "./routes/AvailableDatesRoutes.js";
 
-// Connect to MongoDB
+// ========================================
+// 4. CONNECT TO DATABASE
+// ========================================
 connectDB();
 
 const app = express();
@@ -37,7 +57,7 @@ const allowedOrigins = [
   "http://localhost:5000",           // Backend local
   "https://www.yalasafari.com",     // Production domain
   "https://yalasafari.com",         // Production without www
-  "https://yala-safari-hspl.vercel.app",  // ✅ ADD YOUR VERCEL BACKEND URL
+  "https://yala-safari-hspl.vercel.app",  // ✅ Vercel frontend
 ];
 
 app.use(cors({
@@ -60,6 +80,7 @@ app.use(cors({
 // ==========================================
 // CORS Configuration (DEVELOPMENT MODE)
 // ==========================================
+// Uncomment this for development if you want to allow all origins
 // app.use(cors({
 //   origin: true, // ✅ Allow all origins (development only)
 //   credentials: true,
@@ -67,7 +88,6 @@ app.use(cors({
 //   allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"]
 // }));
 
-//app.options('*', cors());
 // ==========================================
 // Middleware
 // ==========================================
@@ -93,6 +113,10 @@ app.get("/", (req, res) => {
   res.json({ 
     status: "Server is running!",
     timestamp: new Date().toISOString(),
+    environment: {
+      resendConfigured: !!process.env.RESEND_API_KEY,
+      adminEmail: process.env.ADMIN_EMAIL || 'Not configured'
+    },
     endpoints: {
       bookings: "/api/bookings",
       packages: "/api/packages",
@@ -112,7 +136,8 @@ app.get("/api/health", (req, res) => {
   res.json({ 
     status: "OK", 
     message: "API is working",
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    emailService: process.env.RESEND_API_KEY ? 'Resend configured' : 'No email service configured'
   });
 });
 
@@ -185,6 +210,9 @@ app.listen(PORT, () => {
   console.log(`   Blogs:            http://localhost:${PORT}/api/blogs`);
   console.log(`   Dashboard:        http://localhost:${PORT}/api/dashboard`);
   console.log(`   Images:           http://localhost:${PORT}/api/images`);
+  console.log("\n📧 Email Service:");
+  console.log(`   Provider:         ${process.env.RESEND_API_KEY ? 'Resend ✅' : 'Not configured ❌'}`);
+  console.log(`   Admin Email:      ${process.env.ADMIN_EMAIL || 'Not configured ❌'}`);
   console.log("\n" + "=".repeat(50) + "\n");
 });
 
