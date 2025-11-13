@@ -65,8 +65,8 @@ export const createPackage = asyncHandler(async (req, res) => {
     block,
     packageType,
     jeep,
-    shared,
     meals,
+    mealOptions,
     guide,
     tickets,
     features,
@@ -75,10 +75,11 @@ export const createPackage = asyncHandler(async (req, res) => {
     featuredImage,
     maxCapacity,
     availableDates,
+    shared,
   } = req.body;
   
   // Validate required fields
-  if (!name || !description || !park || !jeep || !shared || !meals || !guide) {
+  if (!name || !description || !park || !jeep || !meals || !guide) {
     res.status(400);
     throw new Error('Please provide all required fields');
   }
@@ -88,10 +89,11 @@ export const createPackage = asyncHandler(async (req, res) => {
     description,
     park,
     block,
-    packageType: packageType || 'both',
+    packageType: packageType || 'private',
     jeep,
-    shared,
+    shared: shared || { 1: 25, 2: 20, 3: 18, 4: 15, 5: 15, 6: 15, 7: 15 },
     meals,
+    mealOptions: mealOptions || { breakfast: [], lunch: [] },
     guide,
     tickets: tickets || { foreign: 15, local: 5 },
     features: features || [],
@@ -216,5 +218,240 @@ export const getPackageStats = asyncHandler(async (req, res) => {
       packagesByPark,
       totalBookings: totalBookings[0]?.total || 0,
     },
+  });
+});
+
+// 🆕 @desc    Update jeep pricing
+// @route   PUT /api/packages/:id/jeep-pricing
+// @access  Private/Admin
+export const updateJeepPricing = asyncHandler(async (req, res) => {
+  const { jeepType, timeSlot, price } = req.body;
+  
+  const pkg = await Package.findById(req.params.id);
+  
+  if (!pkg) {
+    res.status(404);
+    throw new Error('Package not found');
+  }
+  
+  // Validate jeep type and time slot
+  const validJeepTypes = ['basic', 'luxury', 'superLuxury'];
+  const validTimeSlots = ['morning', 'afternoon', 'extended', 'fullDay'];
+  
+  if (!validJeepTypes.includes(jeepType)) {
+    res.status(400);
+    throw new Error('Invalid jeep type');
+  }
+  
+  if (!validTimeSlots.includes(timeSlot)) {
+    res.status(400);
+    throw new Error('Invalid time slot');
+  }
+  
+  // Update specific price
+  pkg.jeep[jeepType][timeSlot] = price;
+  pkg.lastModifiedBy = req.admin?._id;
+  
+  await pkg.save();
+  
+  res.json({
+    success: true,
+    message: 'Jeep pricing updated successfully',
+    package: pkg,
+  });
+});
+
+// 🆕 @desc    Update guide pricing
+// @route   PUT /api/packages/:id/guide-pricing
+// @access  Private/Admin
+export const updateGuidePricing = asyncHandler(async (req, res) => {
+  const { guideType, price } = req.body;
+  
+  const pkg = await Package.findById(req.params.id);
+  
+  if (!pkg) {
+    res.status(404);
+    throw new Error('Package not found');
+  }
+  
+  // Validate guide type
+  const validGuideTypes = ['driver', 'driverGuide', 'separateGuide'];
+  
+  if (!validGuideTypes.includes(guideType)) {
+    res.status(400);
+    throw new Error('Invalid guide type');
+  }
+  
+  // Update specific price
+  pkg.guide[guideType] = price;
+  pkg.lastModifiedBy = req.admin?._id;
+  
+  await pkg.save();
+  
+  res.json({
+    success: true,
+    message: 'Guide pricing updated successfully',
+    package: pkg,
+  });
+});
+
+// 🆕 @desc    Add meal option item
+// @route   POST /api/packages/:id/meal-options
+// @access  Private/Admin
+export const addMealOption = asyncHandler(async (req, res) => {
+  const { mealType, name, price, isVegetarian, description } = req.body;
+  
+  const pkg = await Package.findById(req.params.id);
+  
+  if (!pkg) {
+    res.status(404);
+    throw new Error('Package not found');
+  }
+  
+  // Validate meal type
+  if (mealType !== 'breakfast' && mealType !== 'lunch') {
+    res.status(400);
+    throw new Error('Invalid meal type. Must be "breakfast" or "lunch"');
+  }
+  
+  // Validate required fields
+  if (!name || price === undefined) {
+    res.status(400);
+    throw new Error('Name and price are required');
+  }
+  
+  // Initialize mealOptions if not exists
+  if (!pkg.mealOptions) {
+    pkg.mealOptions = { breakfast: [], lunch: [] };
+  }
+  
+  // Add new meal item
+  pkg.mealOptions[mealType].push({
+    name,
+    price,
+    isVegetarian: isVegetarian !== undefined ? isVegetarian : false,
+    description: description || '',
+  });
+  
+  pkg.lastModifiedBy = req.admin?._id;
+  
+  await pkg.save();
+  
+  res.json({
+    success: true,
+    message: `${mealType} option added successfully`,
+    package: pkg,
+  });
+});
+
+// 🆕 @desc    Update meal option item
+// @route   PUT /api/packages/:id/meal-options/:mealType/:itemIndex
+// @access  Private/Admin
+export const updateMealOption = asyncHandler(async (req, res) => {
+  const { mealType, itemIndex } = req.params;
+  const { name, price, isVegetarian, description } = req.body;
+  
+  const pkg = await Package.findById(req.params.id);
+  
+  if (!pkg) {
+    res.status(404);
+    throw new Error('Package not found');
+  }
+  
+  // Validate meal type
+  if (mealType !== 'breakfast' && mealType !== 'lunch') {
+    res.status(400);
+    throw new Error('Invalid meal type');
+  }
+  
+  // Check if item exists
+  if (!pkg.mealOptions?.[mealType]?.[itemIndex]) {
+    res.status(404);
+    throw new Error('Meal option item not found');
+  }
+  
+  // Update item
+  if (name !== undefined) pkg.mealOptions[mealType][itemIndex].name = name;
+  if (price !== undefined) pkg.mealOptions[mealType][itemIndex].price = price;
+  if (isVegetarian !== undefined) pkg.mealOptions[mealType][itemIndex].isVegetarian = isVegetarian;
+  if (description !== undefined) pkg.mealOptions[mealType][itemIndex].description = description;
+  
+  pkg.lastModifiedBy = req.admin?._id;
+  
+  await pkg.save();
+  
+  res.json({
+    success: true,
+    message: 'Meal option updated successfully',
+    package: pkg,
+  });
+});
+
+// 🆕 @desc    Delete meal option item
+// @route   DELETE /api/packages/:id/meal-options/:mealType/:itemIndex
+// @access  Private/Admin
+export const deleteMealOption = asyncHandler(async (req, res) => {
+  const { mealType, itemIndex } = req.params;
+  
+  const pkg = await Package.findById(req.params.id);
+  
+  if (!pkg) {
+    res.status(404);
+    throw new Error('Package not found');
+  }
+  
+  // Validate meal type
+  if (mealType !== 'breakfast' && mealType !== 'lunch') {
+    res.status(400);
+    throw new Error('Invalid meal type');
+  }
+  
+  // Check if item exists
+  if (!pkg.mealOptions?.[mealType]?.[itemIndex]) {
+    res.status(404);
+    throw new Error('Meal option item not found');
+  }
+  
+  // Remove item
+  pkg.mealOptions[mealType].splice(itemIndex, 1);
+  pkg.lastModifiedBy = req.admin?._id;
+  
+  await pkg.save();
+  
+  res.json({
+    success: true,
+    message: 'Meal option deleted successfully',
+    package: pkg,
+  });
+});
+
+// 🆕 @desc    Batch update all pricing
+// @route   PUT /api/packages/:id/pricing-bulk
+// @access  Private/Admin
+export const bulkUpdatePricing = asyncHandler(async (req, res) => {
+  const { jeep, guide, tickets, shared, mealOptions } = req.body;
+  
+  const pkg = await Package.findById(req.params.id);
+  
+  if (!pkg) {
+    res.status(404);
+    throw new Error('Package not found');
+  }
+  
+  // Update all pricing at once
+  if (jeep) pkg.jeep = { ...pkg.jeep, ...jeep };
+  if (guide) pkg.guide = { ...pkg.guide, ...guide };
+  if (tickets) pkg.tickets = { ...pkg.tickets, ...tickets };
+  if (shared) pkg.shared = { ...pkg.shared, ...shared };
+  if (mealOptions) pkg.mealOptions = { ...pkg.mealOptions, ...mealOptions };
+  
+  pkg.lastModifiedBy = req.admin?._id;
+  
+  await pkg.save();
+  
+  res.json({
+    success: true,
+    message: 'All pricing updated successfully',
+    package: pkg,
   });
 });

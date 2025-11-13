@@ -22,64 +22,94 @@ const BookingSchema = new mongoose.Schema({
     required: true 
   },
   
-  // Booking Details
+  // Booking Details - SIMPLIFIED (Private Luxury only)
   reservationType: { 
     type: String, 
     required: true,
-    enum: ['private', 'shared']
+    enum: ['private'], // Only private now
+    default: 'private'
   },
   park: String,
   block: String,
-  jeepType: String,
+  jeepType: { 
+    type: String,
+    enum: ['luxury'], // Only luxury now
+    default: 'luxury'
+  },
   timeSlot: { 
     type: String, 
-    required: true 
+    required: true,
+    enum: ['morning', 'afternoon', 'extended', 'fullDay']
   },
-  guideOption: String,
+  guideOption: {
+    type: String,
+    enum: ['driver', 'driverGuide', 'separateGuide'],
+    required: true
+  },
   visitorType: { 
     type: String, 
     required: true,
     enum: ['foreign', 'local']
   },
   
-  // Date and Seats
+  // Date and People
   date: { 
     type: Date, 
     required: true 
   },
-  selectedSeats: String,
-  people: Number,
+  people: {
+    type: Number,
+    required: true,
+    min: 1,
+    max: 7
+  },
+  
+  // REMOVED: selectedSeats (no shared safari)
   
   // Meal Options
-  mealOption: String,
-  vegOption: String,
+  mealOption: {
+    type: String,
+    enum: ['with', 'without'],
+    default: 'without'
+  },
+  vegOption: {
+    type: String,
+    enum: ['veg', 'non-veg']
+  },
   includeEggs: Boolean,
   includeLunch: Boolean,
   includeBreakfast: Boolean,
   selectedBreakfastItems: [String],
   selectedLunchItems: [String],
   
-  // Additional Information
+  // Additional Information - Foreign Visitors
   pickupLocation: String,
   hotelWhatsapp: String,
   accommodation: String,
   passportNumber: String,
+  
+  // Additional Information - Local Visitors
   nicNumber: String,
   localContact: String,
   localAccommodation: String,
+  
+  // Special Requests
   specialRequests: String,
   
-  // Pricing Information (CRITICAL - MISSING IN YOUR MODEL)
+  // Pricing Information
   ticketPrice: { 
     type: Number, 
+    required: true,
     default: 0 
   },
   jeepPrice: { 
     type: Number, 
+    required: true,
     default: 0 
   },
   guidePrice: { 
     type: Number, 
+    required: true,
     default: 0 
   },
   mealPrice: { 
@@ -90,6 +120,13 @@ const BookingSchema = new mongoose.Schema({
     type: Number, 
     required: true 
   },
+  
+  // Package Reference (if booking was made from a package)
+  packageId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Package'
+  },
+  packageName: String,
   
   // Status
   status: { 
@@ -102,11 +139,19 @@ const BookingSchema = new mongoose.Schema({
     default: 'pending',
     enum: ['pending', 'paid', 'failed', 'refunded']
   },
+  
+  // Admin Notes
   adminNotes: String,
   
 }, {
   timestamps: true // Adds createdAt and updatedAt automatically
 });
+
+// Index for faster queries
+BookingSchema.index({ bookingId: 1 });
+BookingSchema.index({ customerEmail: 1 });
+BookingSchema.index({ date: 1 });
+BookingSchema.index({ status: 1 });
 
 const Booking = mongoose.model("Booking", BookingSchema);
 
