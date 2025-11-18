@@ -1,5 +1,5 @@
 import express from "express";
-import { 
+import {
   createBooking,
   getAllBookings,
   getBookingById,
@@ -9,7 +9,12 @@ import {
   calculatePrice,
   getBookingsByDate,
   getBookingsByDateRange,
-  getUserBookings
+  getUserBookings,
+  approveBooking,
+  rejectBooking,
+  checkDateAvailability,
+  getBookedDates,
+  getPendingBookings
 } from "../Controllers/BookingController.js";
 import auth from "../middleware/auth.js";
 import admin from "../middleware/admin.js";
@@ -29,6 +34,12 @@ router.post("/", createBooking);
 // Get user's own bookings by email or phone
 router.get("/user", getUserBookings);
 
+// Check date availability (NEW)
+router.get("/check-availability/:date", checkDateAvailability);
+
+// Get booked dates for calendar (NEW)
+router.get("/booked-dates", getBookedDates);
+
 // Get bookings by date range (BEFORE /:id to avoid conflict)
 router.get("/date-range", getBookingsByDateRange);
 
@@ -41,6 +52,15 @@ router.get("/date/:date", getBookingsByDate);
 
 // Get all bookings (Admin only) - SPECIFIC ROUTE
 router.get("/all", [auth, admin], getAllBookings);
+
+// Get pending bookings (Admin only) - NEW
+router.get("/pending", [auth, admin], getPendingBookings);
+
+// Approve booking (Admin only) - NEW
+router.patch("/:id/approve", [auth, admin], approveBooking);
+
+// Reject booking (Admin only) - NEW
+router.patch("/:id/reject", [auth, admin], rejectBooking);
 
 // Update payment status (Admin only) - BEFORE /:id
 router.patch("/:id/payment-status", [auth, admin], updatePaymentStatus);

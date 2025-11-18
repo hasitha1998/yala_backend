@@ -1,6 +1,5 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
-
 dotenv.config();
 
 // Create reusable transporter
@@ -14,11 +13,11 @@ const createTransporter = () => {
   });
 };
 
-// Send booking confirmation email to admin
-export const sendBookingEmailToAdmin = async (bookingData) => {
+// Send booking pending notification to admin
+export const sendBookingPendingToAdmin = async (bookingData) => {
   try {
     const transporter = createTransporter();
-
+    
     const {
       bookingId,
       customerName,
@@ -41,7 +40,6 @@ export const sendBookingEmailToAdmin = async (bookingData) => {
       jeepPrice,
       guidePrice,
       mealPrice,
-      status,
       createdAt,
     } = bookingData;
 
@@ -74,7 +72,6 @@ export const sendBookingEmailToAdmin = async (bookingData) => {
       mealDetailsHtml = '<tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Meals:</strong></td><td style="padding: 8px; border: 1px solid #ddd;">No Meals</td></tr>';
     }
 
-    // Format time slot display
     const timeSlotDisplay = {
       morning: 'Morning Safari (5:30 AM - 9:30 AM)',
       afternoon: 'Afternoon Safari (2:30 PM - 6:30 PM)',
@@ -82,7 +79,6 @@ export const sendBookingEmailToAdmin = async (bookingData) => {
       fullDay: 'Full Day Safari (5:30 AM - 6:30 PM)'
     }[timeSlot] || timeSlot;
 
-    // Format guide option display
     const guideDisplay = {
       driver: 'Driver Only',
       driverGuide: 'Driver Guide',
@@ -96,19 +92,22 @@ export const sendBookingEmailToAdmin = async (bookingData) => {
         <style>
           body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
           .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; }
+          .header { background-color: #ff9800; color: white; padding: 20px; text-align: center; }
           .content { background-color: #f9f9f9; padding: 20px; }
           .booking-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
           .booking-table td { padding: 8px; border: 1px solid #ddd; }
-          .price-section { background-color: #e8f5e9; padding: 15px; margin: 20px 0; border-radius: 5px; }
-          .total-price { font-size: 24px; font-weight: bold; color: #2e7d32; }
+          .price-section { background-color: #fff3e0; padding: 15px; margin: 20px 0; border-radius: 5px; }
+          .total-price { font-size: 24px; font-weight: bold; color: #e65100; }
+          .action-button { display: inline-block; padding: 12px 24px; margin: 10px 5px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+          .approve-btn { background-color: #4CAF50; color: white; }
+          .reject-btn { background-color: #f44336; color: white; }
           .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <h1>🎉 New Booking Received!</h1>
+            <h1>⏳ New Booking Pending Approval</h1>
             <p>Booking ID: ${bookingId}</p>
           </div>
           
@@ -158,7 +157,7 @@ export const sendBookingEmailToAdmin = async (bookingData) => {
               ${mealDetailsHtml}
               <tr>
                 <td style="padding: 8px; border: 1px solid #ddd;"><strong>Status:</strong></td>
-                <td style="padding: 8px; border: 1px solid #ddd;"><span style="background-color: #fff3cd; padding: 5px 10px; border-radius: 3px;">${status}</span></td>
+                <td style="padding: 8px; border: 1px solid #ddd;"><span style="background-color: #fff3cd; padding: 5px 10px; border-radius: 3px;">PENDING APPROVAL</span></td>
               </tr>
             </table>
 
@@ -181,20 +180,17 @@ export const sendBookingEmailToAdmin = async (bookingData) => {
                   <td style="padding: 8px; border: 1px solid #ddd;"><strong>Meals:</strong></td>
                   <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${Number(mealPrice).toFixed(2)}</td>
                 </tr>
-                <tr style="background-color: #c8e6c9;">
+                <tr style="background-color: #ffe0b2;">
                   <td style="padding: 12px; border: 1px solid #ddd;"><strong>TOTAL PRICE:</strong></td>
                   <td style="padding: 12px; border: 1px solid #ddd; text-align: right;"><span class="total-price">$${Number(totalPrice).toFixed(2)}</span></td>
                 </tr>
               </table>
-              
-              <p style="margin-top: 15px; font-size: 12px; color: #666;">
-                <strong>Note:</strong> Total = Ticket ($${Number(ticketPrice).toFixed(2)}) + Jeep ($${Number(jeepPrice).toFixed(2)}) + Guide ($${Number(guidePrice).toFixed(2)}) + Meals ($${Number(mealPrice).toFixed(2)})
-              </p>
             </div>
 
-            <p style="margin-top: 20px; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107;">
-              <strong>⚠️ Action Required:</strong> Please contact the customer to confirm payment details and booking status.
-            </p>
+            <div style="text-align: center; margin: 30px 0;">
+              <p style="font-size: 18px; margin-bottom: 20px;"><strong>⚠️ Action Required: Please review and approve/reject this booking</strong></p>
+              <p style="font-size: 14px; color: #666;">Login to your admin panel to manage this booking</p>
+            </div>
           </div>
 
           <div class="footer">
@@ -209,30 +205,30 @@ export const sendBookingEmailToAdmin = async (bookingData) => {
     const mailOptions = {
       from: `"Yala Tours Booking System" <${process.env.EMAIL_USER}>`,
       to: process.env.ADMIN_EMAIL,
-      subject: `🎉 New Booking: ${bookingId} - ${customerName}`,
+      subject: `⏳ PENDING: New Booking ${bookingId} - ${customerName}`,
       html: emailHtml,
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('Admin email sent successfully:', info.messageId);
+    console.log('Admin pending notification sent:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('Error sending admin email:', error);
+    console.error('Error sending admin pending notification:', error);
     return { success: false, error: error.message };
   }
 };
 
-// Send booking confirmation email to customer
-export const sendBookingConfirmationToCustomer = async (bookingData) => {
+// Send booking pending confirmation to customer
+export const sendBookingPendingToCustomer = async (bookingData) => {
   try {
     const transporter = createTransporter();
     
-    const { 
-      customerName, 
-      customerEmail, 
-      bookingId, 
-      date, 
-      timeSlot, 
+    const {
+      customerName,
+      customerEmail,
+      bookingId,
+      date,
+      timeSlot,
       totalPrice,
       ticketPrice,
       jeepPrice,
@@ -244,7 +240,6 @@ export const sendBookingConfirmationToCustomer = async (bookingData) => {
       mealOption
     } = bookingData;
 
-    // Format time slot display
     const timeSlotDisplay = {
       morning: 'Morning Safari (5:30 AM - 9:30 AM)',
       afternoon: 'Afternoon Safari (2:30 PM - 6:30 PM)',
@@ -252,7 +247,6 @@ export const sendBookingConfirmationToCustomer = async (bookingData) => {
       fullDay: 'Full Day Safari (5:30 AM - 6:30 PM)'
     }[timeSlot] || timeSlot;
 
-    // Format guide option display
     const guideDisplay = {
       driver: 'Driver Only',
       driverGuide: 'Driver Guide',
@@ -266,23 +260,30 @@ export const sendBookingConfirmationToCustomer = async (bookingData) => {
         <style>
           body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
           .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; }
+          .header { background-color: #ff9800; color: white; padding: 20px; text-align: center; }
           .content { background-color: #f9f9f9; padding: 20px; }
           .booking-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
           .booking-table td { padding: 10px; border: 1px solid #ddd; }
-          .price-section { background-color: #e8f5e9; padding: 15px; margin: 20px 0; border-radius: 5px; }
-          .total-price { font-size: 24px; font-weight: bold; color: #2e7d32; }
+          .price-section { background-color: #fff3e0; padding: 15px; margin: 20px 0; border-radius: 5px; }
+          .total-price { font-size: 24px; font-weight: bold; color: #e65100; }
+          .status-box { background-color: #fff3cd; padding: 15px; border-left: 4px solid #ff9800; margin: 20px 0; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <h1>Booking Confirmation</h1>
+            <h1>Booking Received - Pending Confirmation</h1>
           </div>
+
           <div class="content">
             <p>Dear ${customerName},</p>
-            <p>Thank you for your booking! We have received your reservation request.</p>
+            <p>Thank you for your booking! We have received your reservation request and it is currently <strong>pending confirmation</strong>.</p>
             
+            <div class="status-box">
+              <p style="margin: 0; font-size: 16px;"><strong>📋 Current Status: PENDING</strong></p>
+              <p style="margin: 10px 0 0 0; font-size: 14px;">Our team will review your booking and confirm within 24 hours. You will receive another email once your booking is confirmed.</p>
+            </div>
+
             <table class="booking-table">
               <tr>
                 <td><strong>Booking ID:</strong></td>
@@ -337,20 +338,22 @@ export const sendBookingConfirmationToCustomer = async (bookingData) => {
                   <td><strong>Meals:</strong></td>
                   <td style="text-align: right;">$${Number(mealPrice).toFixed(2)}</td>
                 </tr>
-                <tr style="background-color: #c8e6c9;">
+                <tr style="background-color: #ffe0b2;">
                   <td><strong>TOTAL AMOUNT:</strong></td>
                   <td style="text-align: right;"><span class="total-price">$${Number(totalPrice).toFixed(2)}</span></td>
                 </tr>
               </table>
             </div>
 
-            <p style="margin-top: 20px; padding: 15px; background-color: #fff9e6; border-left: 4px solid #ffc107;">
-              <strong>📞 Next Steps:</strong><br>
-              Our team will contact you shortly with payment details and further instructions.<br>
-              Please keep your Booking ID <strong>${bookingId}</strong> for reference.
+            <p style="margin-top: 20px; padding: 15px; background-color: #e3f2fd; border-left: 4px solid #2196F3;">
+              <strong>📞 What happens next?</strong><br>
+              1. Our team will review your booking request<br>
+              2. We will confirm availability for your selected date<br>
+              3. You will receive a confirmation email with payment details<br>
+              4. Please keep your Booking ID <strong>${bookingId}</strong> for reference
             </p>
 
-            <p>For any queries, please contact us via WhatsApp or email.</p>
+            <p>For urgent queries, please contact us via WhatsApp or email.</p>
             
             <p>Best regards,<br>Yala Tours Team</p>
           </div>
@@ -362,7 +365,152 @@ export const sendBookingConfirmationToCustomer = async (bookingData) => {
     const mailOptions = {
       from: `"Yala Tours" <${process.env.EMAIL_USER}>`,
       to: customerEmail,
-      subject: `Booking Confirmation - ${bookingId}`,
+      subject: `Booking Pending Confirmation - ${bookingId}`,
+      html: emailHtml,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('Customer pending notification sent successfully');
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending customer pending notification:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Send booking confirmed email to customer
+export const sendBookingConfirmedToCustomer = async (bookingData) => {
+  try {
+    const transporter = createTransporter();
+    
+    const {
+      customerName,
+      customerEmail,
+      bookingId,
+      date,
+      timeSlot,
+      totalPrice,
+      people,
+      visitorType,
+      guideOption,
+      mealOption
+    } = bookingData;
+
+    const timeSlotDisplay = {
+      morning: 'Morning Safari (5:30 AM - 9:30 AM)',
+      afternoon: 'Afternoon Safari (2:30 PM - 6:30 PM)',
+      extended: 'Extended Safari (5:30 AM - 12:00 PM)',
+      fullDay: 'Full Day Safari (5:30 AM - 6:30 PM)'
+    }[timeSlot] || timeSlot;
+
+    const guideDisplay = {
+      driver: 'Driver Only',
+      driverGuide: 'Driver Guide',
+      separateGuide: 'Driver + Separate Guide'
+    }[guideOption] || guideOption;
+
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; }
+          .content { background-color: #f9f9f9; padding: 20px; }
+          .booking-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          .booking-table td { padding: 10px; border: 1px solid #ddd; }
+          .price-section { background-color: #e8f5e9; padding: 15px; margin: 20px 0; border-radius: 5px; }
+          .total-price { font-size: 24px; font-weight: bold; color: #2e7d32; }
+          .confirmed-box { background-color: #d4edda; padding: 15px; border-left: 4px solid #28a745; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>✅ Booking Confirmed!</h1>
+          </div>
+
+          <div class="content">
+            <p>Dear ${customerName},</p>
+            <p>Great news! Your booking has been <strong>CONFIRMED</strong>!</p>
+            
+            <div class="confirmed-box">
+              <p style="margin: 0; font-size: 18px;"><strong>✅ Status: CONFIRMED</strong></p>
+              <p style="margin: 10px 0 0 0; font-size: 14px;">Your safari experience is secured. We look forward to making your visit memorable!</p>
+            </div>
+
+            <h2>Booking Details</h2>
+            <table class="booking-table">
+              <tr>
+                <td><strong>Booking ID:</strong></td>
+                <td>${bookingId}</td>
+              </tr>
+              <tr>
+                <td><strong>Date:</strong></td>
+                <td>${new Date(date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</td>
+              </tr>
+              <tr>
+                <td><strong>Time:</strong></td>
+                <td>${timeSlotDisplay}</td>
+              </tr>
+              <tr>
+                <td><strong>Safari Type:</strong></td>
+                <td>Private Safari (Luxury Jeep)</td>
+              </tr>
+              <tr>
+                <td><strong>Number of People:</strong></td>
+                <td>${people}</td>
+              </tr>
+              <tr>
+                <td><strong>Visitor Type:</strong></td>
+                <td>${visitorType === 'foreign' ? 'Foreign Visitor' : 'Local Visitor'}</td>
+              </tr>
+              <tr>
+                <td><strong>Guide:</strong></td>
+                <td>${guideDisplay}</td>
+              </tr>
+              <tr>
+                <td><strong>Meals:</strong></td>
+                <td>${mealOption === 'with' ? 'Included' : 'Not Included'}</td>
+              </tr>
+              <tr style="background-color: #c8e6c9;">
+                <td><strong>Total Amount:</strong></td>
+                <td style="text-align: right;"><span class="total-price">$${Number(totalPrice).toFixed(2)}</span></td>
+              </tr>
+            </table>
+
+            <div style="background-color: #fff3e0; padding: 15px; border-left: 4px solid #ff9800; margin: 20px 0;">
+              <h3 style="margin-top: 0;">💳 Payment Information</h3>
+              <p>Our team will contact you shortly with payment details and instructions.</p>
+              <p><strong>Please have your Booking ID ready: ${bookingId}</strong></p>
+            </div>
+
+            <div style="background-color: #e3f2fd; padding: 15px; border-left: 4px solid #2196F3; margin: 20px 0;">
+              <h3 style="margin-top: 0;">📋 Before Your Safari</h3>
+              <ul style="margin: 10px 0; padding-left: 20px;">
+                <li>Arrive 15 minutes before your scheduled time</li>
+                <li>Bring your booking confirmation</li>
+                <li>Wear comfortable clothing and bring sunscreen</li>
+                <li>Camera and binoculars recommended</li>
+              </ul>
+            </div>
+
+            <p>For any questions, please contact us via WhatsApp or email.</p>
+            
+            <p>We can't wait to show you the wonders of Yala!</p>
+            
+            <p>Best regards,<br>Yala Tours Team</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const mailOptions = {
+      from: `"Yala Tours" <${process.env.EMAIL_USER}>`,
+      to: customerEmail,
+      subject: `✅ Booking Confirmed - ${bookingId}`,
       html: emailHtml,
     };
 
@@ -370,7 +518,92 @@ export const sendBookingConfirmationToCustomer = async (bookingData) => {
     console.log('Customer confirmation email sent successfully');
     return { success: true };
   } catch (error) {
-    console.error('Error sending customer email:', error);
+    console.error('Error sending customer confirmation email:', error);
     return { success: false, error: error.message };
   }
+};
+
+// Send booking rejected email to customer
+export const sendBookingRejectedToCustomer = async (bookingData, reason = '') => {
+  try {
+    const transporter = createTransporter();
+    
+    const {
+      customerName,
+      customerEmail,
+      bookingId,
+      date,
+      timeSlot,
+    } = bookingData;
+
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #f44336; color: white; padding: 20px; text-align: center; }
+          .content { background-color: #f9f9f9; padding: 20px; }
+          .rejected-box { background-color: #ffebee; padding: 15px; border-left: 4px solid #f44336; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Booking Update</h1>
+          </div>
+
+          <div class="content">
+            <p>Dear ${customerName},</p>
+            
+            <div class="rejected-box">
+              <p style="margin: 0; font-size: 18px;"><strong>⚠️ Booking Not Confirmed</strong></p>
+              <p style="margin: 10px 0 0 0; font-size: 14px;">Unfortunately, we are unable to confirm your booking at this time.</p>
+            </div>
+
+            <p><strong>Booking ID:</strong> ${bookingId}</p>
+            <p><strong>Requested Date:</strong> ${new Date(date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            
+            ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
+
+            <div style="background-color: #e3f2fd; padding: 15px; border-left: 4px solid #2196F3; margin: 20px 0;">
+              <h3 style="margin-top: 0;">What can you do?</h3>
+              <ul style="margin: 10px 0; padding-left: 20px;">
+                <li>Try booking for a different date</li>
+                <li>Contact us for alternative options</li>
+                <li>Check our availability calendar</li>
+              </ul>
+            </div>
+
+            <p>We apologize for any inconvenience. Please feel free to contact us if you have any questions or would like to explore other options.</p>
+            
+            <p>Best regards,<br>Yala Tours Team</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const mailOptions = {
+      from: `"Yala Tours" <${process.env.EMAIL_USER}>`,
+      to: customerEmail,
+      subject: `Booking Update - ${bookingId}`,
+      html: emailHtml,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('Customer rejection email sent successfully');
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending customer rejection email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export default {
+  sendBookingPendingToAdmin,
+  sendBookingPendingToCustomer,
+  sendBookingConfirmedToCustomer,
+  sendBookingRejectedToCustomer
 };
