@@ -22,56 +22,60 @@ import admin from "../middleware/admin.js";
 const router = express.Router();
 
 // ==========================================
-// PUBLIC ROUTES (No Authentication Required)
+// PUBLIC ROUTES (Specific routes FIRST)
 // ==========================================
 
-// Calculate price preview before booking (MUST BE FIRST)
+// Calculate price preview (MUST BE FIRST)
 router.post("/calculate-price", calculatePrice);
 
-// Create a new booking
-router.post("/", createBooking);
+// Get booked dates for calendar (BEFORE any :param routes)
+router.get("/booked-dates", getBookedDates);
+
+// Check date availability (BEFORE any :param routes)
+router.get("/check-availability/:date", checkDateAvailability);
 
 // Get user's own bookings by email or phone
 router.get("/user", getUserBookings);
 
-// Check date availability (NEW)
-router.get("/check-availability/:date", checkDateAvailability);
-
-// Get booked dates for calendar (NEW)
-router.get("/booked-dates", getBookedDates);
-
-// Get bookings by date range (BEFORE /:id to avoid conflict)
+// Get bookings by date range (BEFORE /:id)
 router.get("/date-range", getBookingsByDateRange);
 
-// Get bookings by specific date (BEFORE /:id to avoid conflict)
-router.get("/date/:date", getBookingsByDate);
+// Create a new booking
+router.post("/", createBooking);
 
 // ==========================================
-// PROTECTED ROUTES (Authentication Required)
+// PROTECTED ROUTES (Admin only - Specific before generic)
 // ==========================================
 
-// Get all bookings (Admin only) - SPECIFIC ROUTE
+// Get all bookings (Admin) - /all route
 router.get("/all", [auth, admin], getAllBookings);
 
-// Get pending bookings (Admin only) - NEW
+// Get pending bookings (Admin) - /pending route
 router.get("/pending", [auth, admin], getPendingBookings);
 
-// Approve booking (Admin only) - NEW
+// Approve booking (Admin) - /:id/approve
 router.patch("/:id/approve", [auth, admin], approveBooking);
 
-// Reject booking (Admin only) - NEW
+// Reject booking (Admin) - /:id/reject
 router.patch("/:id/reject", [auth, admin], rejectBooking);
 
-// Update payment status (Admin only) - BEFORE /:id
+// Update payment status (Admin) - /:id/payment-status
 router.patch("/:id/payment-status", [auth, admin], updatePaymentStatus);
 
-// Update booking details (Admin only)
+// Get bookings by specific date (Admin) - /date/:date
+router.get("/date/:date", [auth, admin], getBookingsByDate);
+
+// Update booking (Admin)
 router.put("/:id", [auth, admin], updateBooking);
 
-// Delete booking (Admin only)
+// Delete booking (Admin)
 router.delete("/:id", [auth, admin], deleteBooking);
 
-// Get booking by ID (MUST BE LAST - catches anything not matched above)
+// ==========================================
+// DYNAMIC ROUTES (MUST BE LAST)
+// ==========================================
+
+// Get booking by ID (LAST - catches remaining GET /:id)
 router.get("/:id", getBookingById);
 
 export default router;
