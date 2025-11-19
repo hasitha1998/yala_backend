@@ -34,6 +34,7 @@ router.get("/booked-dates", getBookedDates);
 // Check date availability (BEFORE any :param routes)
 router.get("/check-availability/:date", checkDateAvailability);
 
+
 // Get user's own bookings by email or phone
 router.get("/user", getUserBookings);
 

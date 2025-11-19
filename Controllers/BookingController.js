@@ -302,6 +302,7 @@ export const rejectBooking = asyncHandler(async (req, res) => {
 // @desc Check date availability
 // @route GET /api/bookings/check-availability/:date
 // @access Public
+
 export const checkDateAvailability = asyncHandler(async (req, res) => {
   try {
     const requestedDate = new Date(req.params.date);
