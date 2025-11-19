@@ -305,14 +305,34 @@ export const rejectBooking = asyncHandler(async (req, res) => {
 
 export const checkDateAvailability = asyncHandler(async (req, res) => {
   try {
+    console.log('📅 Checking availability for date:', req.params.date);
+    
+    // Parse the date parameter (handles various formats)
     const requestedDate = new Date(req.params.date);
+    
+    // Validate date
+    if (isNaN(requestedDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid date format. Use YYYY-MM-DD format.'
+      });
+    }
+    
+    // Reset time to midnight for accurate comparison
     requestedDate.setHours(0, 0, 0, 0);
+    
+    console.log('🔍 Searching for bookings on:', requestedDate.toISOString());
 
     // Check if there's any pending or confirmed booking for this date
     const existingBooking = await Booking.findOne({
-      date: requestedDate,
+      date: {
+        $gte: requestedDate,
+        $lt: new Date(requestedDate.getTime() + 24 * 60 * 60 * 1000) // Next day
+      },
       status: { $in: ['pending', 'confirmed'] },
     }).select('bookingId status date timeSlot');
+
+    console.log('📊 Found booking:', existingBooking ? 'YES' : 'NO');
 
     if (existingBooking) {
       return res.json({
@@ -334,9 +354,11 @@ export const checkDateAvailability = asyncHandler(async (req, res) => {
       message: 'Date is available for booking',
     });
   } catch (error) {
-    console.error('Error checking availability:', error);
-    res.status(400);
-    throw new Error(error.message || 'Failed to check availability');
+    console.error('❌ Error checking availability:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to check availability'
+    });
   }
 });
 
