@@ -295,6 +295,35 @@ export const updateGuidePricing = asyncHandler(async (req, res) => {
   });
 });
 
+// Add this to your PackageController.js
+
+// @desc    Get package availability (available dates)
+// @route   GET /api/packages/:id/availability
+// @access  Public
+export const getPackageAvailability = asyncHandler(async (req, res) => {
+  const pkg = await Package.findById(req.params.id);
+  
+  if (!pkg) {
+    res.status(404);
+    throw new Error('Package not found');
+  }
+  
+  // Return available dates from package
+  // If no specific dates are set, return default availability
+  const availability = {
+    success: true,
+    packageId: pkg._id,
+    packageName: pkg.name,
+    availableDates: pkg.availableDates || {
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // 90 days from now
+    },
+    isActive: pkg.isActive,
+  };
+  
+  res.json(availability);
+});
+
 // 🆕 @desc    Add meal option item
 // @route   POST /api/packages/:id/meal-options
 // @access  Private/Admin
