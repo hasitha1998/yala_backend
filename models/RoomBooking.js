@@ -1,17 +1,17 @@
 const mongoose = require('mongoose');
 
-const taxiBookingSchema = new mongoose.Schema({
+const roomBookingSchema = new mongoose.Schema({
   bookingReference: {
     type: String,
     required: true,
     unique: true
   },
-  taxi: {
+  room: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Taxi',
+    ref: 'Room',
     required: true
   },
-  customerDetails: {
+  guestDetails: {
     firstName: {
       type: String,
       required: true,
@@ -32,40 +32,22 @@ const taxiBookingSchema = new mongoose.Schema({
       type: String,
       required: true
     },
-    country: String
+    country: String,
+    specialRequests: String
   },
-  tripDetails: {
-    serviceType: {
-      type: String,
-      required: true,
-      enum: ['Airport Transfer', 'City Tour', 'Point to Point', 'Full Day Rental', 'Custom']
-    },
-    pickupLocation: {
-      type: String,
-      required: true
-    },
-    dropoffLocation: {
-      type: String,
-      required: true
-    },
-    pickupDate: {
-      type: Date,
-      required: true
-    },
-    pickupTime: {
-      type: String,
-      required: true
-    },
-    distance: {
-      type: Number, // in kilometers
-      min: 0
-    },
-    duration: {
-      type: Number, // in hours
-      min: 0
-    }
+  checkIn: {
+    type: Date,
+    required: true
   },
-  passengers: {
+  checkOut: {
+    type: Date,
+    required: true
+  },
+  numberOfNights: {
+    type: Number,
+    required: true
+  },
+  guests: {
     adults: {
       type: Number,
       required: true,
@@ -74,24 +56,12 @@ const taxiBookingSchema = new mongoose.Schema({
     children: {
       type: Number,
       default: 0
-    },
-    luggage: {
-      type: Number,
-      default: 0
     }
   },
   pricing: {
-    basePrice: {
+    roomRate: {
       type: Number,
       required: true
-    },
-    distanceCharge: {
-      type: Number,
-      default: 0
-    },
-    additionalCharges: {
-      type: Number,
-      default: 0
     },
     totalAmount: {
       type: Number,
@@ -102,9 +72,6 @@ const taxiBookingSchema = new mongoose.Schema({
       default: 'USD'
     }
   },
-  specialRequests: {
-    type: String
-  },
   paymentStatus: {
     type: String,
     enum: ['pending', 'confirmed', 'paid', 'cancelled', 'refunded'],
@@ -112,7 +79,7 @@ const taxiBookingSchema = new mongoose.Schema({
   },
   bookingStatus: {
     type: String,
-    enum: ['pending', 'confirmed', 'in-progress', 'completed', 'cancelled', 'no-show'],
+    enum: ['pending', 'confirmed', 'checked-in', 'checked-out', 'cancelled', 'no-show'],
     default: 'pending'
   },
   notes: {
@@ -123,13 +90,20 @@ const taxiBookingSchema = new mongoose.Schema({
 });
 
 // Generate booking reference before saving
-taxiBookingSchema.pre('save', async function(next) {
+roomBookingSchema.pre('save', async function(next) {
   if (!this.bookingReference) {
     const timestamp = Date.now().toString(36).toUpperCase();
     const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-    this.bookingReference = `TAXI-${timestamp}-${random}`;
+    this.bookingReference = `ROOM-${timestamp}-${random}`;
   }
+  
+  // Calculate number of nights
+  if (this.checkIn && this.checkOut) {
+    const diffTime = Math.abs(this.checkOut - this.checkIn);
+    this.numberOfNights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  }
+  
   next();
 });
 
-module.exports = mongoose.model('TaxiBooking', taxiBookingSchema);
+module.exports = mongoose.model('RoomBooking', roomBookingSchema);

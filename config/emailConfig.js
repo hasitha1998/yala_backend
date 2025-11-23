@@ -2,7 +2,7 @@ import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Create reusable transporter
+// Create reusable transporter at module level
 const createTransporter = () => {
   return nodemailer.createTransport({
     service: 'gmail',
@@ -13,8 +13,27 @@ const createTransporter = () => {
   });
 };
 
+// Helper function to format date
+const formatDate = (date) => {
+  return new Date(date).toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+// Helper function to format time
+const formatTime = (time) => {
+  return time || 'N/A';
+};
+
+// ========================================
+// SAFARI BOOKING EMAILS
+// ========================================
+
 // Send booking pending notification to admin
-export const sendBookingPendingToAdmin = async (bookingData) => {
+const sendBookingPendingToAdmin = async (bookingData) => {
   try {
     const transporter = createTransporter();
     
@@ -219,7 +238,7 @@ export const sendBookingPendingToAdmin = async (bookingData) => {
 };
 
 // Send booking pending confirmation to customer
-export const sendBookingPendingToCustomer = async (bookingData) => {
+const sendBookingPendingToCustomer = async (bookingData) => {
   try {
     const transporter = createTransporter();
     
@@ -379,7 +398,7 @@ export const sendBookingPendingToCustomer = async (bookingData) => {
 };
 
 // Send booking confirmed email to customer
-export const sendBookingConfirmedToCustomer = async (bookingData) => {
+const sendBookingConfirmedToCustomer = async (bookingData) => {
   try {
     const transporter = createTransporter();
     
@@ -524,7 +543,7 @@ export const sendBookingConfirmedToCustomer = async (bookingData) => {
 };
 
 // Send booking rejected email to customer
-export const sendBookingRejectedToCustomer = async (bookingData, reason = '') => {
+const sendBookingRejectedToCustomer = async (bookingData, reason = '') => {
   try {
     const transporter = createTransporter();
     
@@ -601,9 +620,303 @@ export const sendBookingRejectedToCustomer = async (bookingData, reason = '') =>
   }
 };
 
-export default {
+// ========================================
+// ROOM BOOKING EMAILS
+// ========================================
+
+const sendRoomBookingConfirmation = async (booking, room) => {
+  try {
+    const transporter = createTransporter();
+    
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: booking.guestDetails.email,
+      subject: `Room Booking Confirmation - ${booking.bookingReference}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #2c5f2d; color: white; padding: 20px; text-align: center; }
+            .content { background: #f9f9f9; padding: 20px; margin: 20px 0; }
+            .detail-row { padding: 10px 0; border-bottom: 1px solid #ddd; }
+            .label { font-weight: bold; color: #2c5f2d; }
+            .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🏨 Room Booking Confirmed!</h1>
+            </div>
+            
+            <div class="content">
+              <h2>Dear ${booking.guestDetails.firstName} ${booking.guestDetails.lastName},</h2>
+              <p>Thank you for booking with Yala Safari! Your room reservation has been confirmed.</p>
+              
+              <div class="detail-row">
+                <span class="label">Booking Reference:</span> ${booking.bookingReference}
+              </div>
+              
+              <div class="detail-row">
+                <span class="label">Room Type:</span> ${room.roomType} - ${room.name}
+              </div>
+              
+              <div class="detail-row">
+                <span class="label">Check-In:</span> ${formatDate(booking.checkIn)} at ${room.policies.checkIn}
+              </div>
+              
+              <div class="detail-row">
+                <span class="label">Check-Out:</span> ${formatDate(booking.checkOut)} at ${room.policies.checkOut}
+              </div>
+              
+              <div class="detail-row">
+                <span class="label">Number of Nights:</span> ${booking.numberOfNights}
+              </div>
+              
+              <div class="detail-row">
+                <span class="label">Guests:</span> ${booking.guests.adults} Adult(s), ${booking.guests.children} Child(ren)
+              </div>
+              
+              <div class="detail-row">
+                <span class="label">Total Amount:</span> ${booking.pricing.currency} ${booking.pricing.totalAmount}
+              </div>
+              
+              ${booking.guestDetails.specialRequests ? `
+              <div class="detail-row">
+                <span class="label">Special Requests:</span> ${booking.guestDetails.specialRequests}
+              </div>
+              ` : ''}
+              
+              <p style="margin-top: 20px;">
+                <strong>Contact Information:</strong><br>
+                Phone: ${booking.guestDetails.phone}<br>
+                Email: ${booking.guestDetails.email}
+              </p>
+              
+              ${room.policies.cancellationPolicy ? `
+              <p style="margin-top: 20px; font-size: 12px; color: #666;">
+                <strong>Cancellation Policy:</strong> ${room.policies.cancellationPolicy}
+              </p>
+              ` : ''}
+            </div>
+            
+            <div class="footer">
+              <p>If you have any questions, please contact us at ${process.env.EMAIL_USER}</p>
+              <p>Yala Safari Tours © ${new Date().getFullYear()}</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('✅ Room booking confirmation email sent to:', booking.guestDetails.email);
+    
+    // Send notification to admin
+    await sendAdminNotification('room', booking, room);
+    
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Error sending room booking email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// ========================================
+// TAXI BOOKING EMAILS
+// ========================================
+
+const sendTaxiBookingConfirmation = async (booking, taxi) => {
+  try {
+    const transporter = createTransporter();
+    
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: booking.customerDetails.email,
+      subject: `Taxi Booking Confirmation - ${booking.bookingReference}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #ff9800; color: white; padding: 20px; text-align: center; }
+            .content { background: #f9f9f9; padding: 20px; margin: 20px 0; }
+            .detail-row { padding: 10px 0; border-bottom: 1px solid #ddd; }
+            .label { font-weight: bold; color: #ff9800; }
+            .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🚕 Taxi Booking Confirmed!</h1>
+            </div>
+            
+            <div class="content">
+              <h2>Dear ${booking.customerDetails.firstName} ${booking.customerDetails.lastName},</h2>
+              <p>Your taxi has been booked successfully. We'll be there on time!</p>
+              
+              <div class="detail-row">
+                <span class="label">Booking Reference:</span> ${booking.bookingReference}
+              </div>
+              
+              <div class="detail-row">
+                <span class="label">Vehicle:</span> ${taxi.vehicleType} - ${taxi.vehicleName}
+              </div>
+              
+              <div class="detail-row">
+                <span class="label">Service Type:</span> ${booking.tripDetails.serviceType}
+              </div>
+              
+              <div class="detail-row">
+                <span class="label">Pickup Location:</span> ${booking.tripDetails.pickupLocation}
+              </div>
+              
+              <div class="detail-row">
+                <span class="label">Dropoff Location:</span> ${booking.tripDetails.dropoffLocation}
+              </div>
+              
+              <div class="detail-row">
+                <span class="label">Pickup Date & Time:</span> ${formatDate(booking.tripDetails.pickupDate)} at ${booking.tripDetails.pickupTime}
+              </div>
+              
+              <div class="detail-row">
+                <span class="label">Passengers:</span> ${booking.passengers.adults} Adult(s), ${booking.passengers.children} Child(ren)
+              </div>
+              
+              <div class="detail-row">
+                <span class="label">Luggage:</span> ${booking.passengers.luggage} Piece(s)
+              </div>
+              
+              <div class="detail-row">
+                <span class="label">Total Amount:</span> ${booking.pricing.currency} ${booking.pricing.totalAmount}
+              </div>
+              
+              ${booking.specialRequests ? `
+              <div class="detail-row">
+                <span class="label">Special Requests:</span> ${booking.specialRequests}
+              </div>
+              ` : ''}
+              
+              <p style="margin-top: 20px;">
+                <strong>Contact Information:</strong><br>
+                Phone: ${booking.customerDetails.phone}<br>
+                Email: ${booking.customerDetails.email}
+              </p>
+              
+              <p style="margin-top: 20px; background: #fff3cd; padding: 15px; border-left: 4px solid #ff9800;">
+                <strong>Important:</strong> Please be ready 10 minutes before the pickup time. 
+                Our driver will contact you 30 minutes before arrival.
+              </p>
+            </div>
+            
+            <div class="footer">
+              <p>If you have any questions, please contact us at ${process.env.EMAIL_USER}</p>
+              <p>Yala Safari Tours © ${new Date().getFullYear()}</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('✅ Taxi booking confirmation email sent to:', booking.customerDetails.email);
+    
+    // Send notification to admin
+    await sendAdminNotification('taxi', booking, taxi);
+    
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Error sending taxi booking email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// ========================================
+// ADMIN NOTIFICATION EMAIL
+// ========================================
+
+const sendAdminNotification = async (type, booking, item) => {
+  try {
+    const transporter = createTransporter();
+    let subject, content;
+    
+    if (type === 'room') {
+      subject = `New Room Booking: ${booking.bookingReference}`;
+      content = `
+        <h2>New Room Booking Received</h2>
+        <p><strong>Guest:</strong> ${booking.guestDetails.firstName} ${booking.guestDetails.lastName}</p>
+        <p><strong>Room:</strong> ${item.name}</p>
+        <p><strong>Check-In:</strong> ${formatDate(booking.checkIn)}</p>
+        <p><strong>Check-Out:</strong> ${formatDate(booking.checkOut)}</p>
+        <p><strong>Total:</strong> ${booking.pricing.currency} ${booking.pricing.totalAmount}</p>
+        <p><strong>Contact:</strong> ${booking.guestDetails.email} | ${booking.guestDetails.phone}</p>
+      `;
+    } else if (type === 'taxi') {
+      subject = `New Taxi Booking: ${booking.bookingReference}`;
+      content = `
+        <h2>New Taxi Booking Received</h2>
+        <p><strong>Customer:</strong> ${booking.customerDetails.firstName} ${booking.customerDetails.lastName}</p>
+        <p><strong>Vehicle:</strong> ${item.vehicleName}</p>
+        <p><strong>Pickup:</strong> ${booking.tripDetails.pickupLocation} on ${formatDate(booking.tripDetails.pickupDate)} at ${booking.tripDetails.pickupTime}</p>
+        <p><strong>Dropoff:</strong> ${booking.tripDetails.dropoffLocation}</p>
+        <p><strong>Total:</strong> ${booking.pricing.currency} ${booking.pricing.totalAmount}</p>
+        <p><strong>Contact:</strong> ${booking.customerDetails.email} | ${booking.customerDetails.phone}</p>
+      `;
+    }
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: process.env.ADMIN_EMAIL || process.env.EMAIL_USER,
+      subject: subject,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9; }
+            h2 { color: #2c5f2d; }
+            p { margin: 10px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            ${content}
+            <p style="margin-top: 20px; color: #666; font-size: 12px;">
+              This is an automated notification from Yala Safari booking system.
+            </p>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('✅ Admin notification sent');
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Error sending admin notification:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// ========================================
+// EXPORTS
+// ========================================
+
+export {
   sendBookingPendingToAdmin,
   sendBookingPendingToCustomer,
   sendBookingConfirmedToCustomer,
-  sendBookingRejectedToCustomer
+  sendBookingRejectedToCustomer,
+  sendRoomBookingConfirmation,
+  sendTaxiBookingConfirmation
 };

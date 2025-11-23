@@ -428,27 +428,7 @@ export const getPendingBookings = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc Get booking by ID or bookingId
-// @route GET /api/bookings/:id
-// @access Public
-export const getBookingById = asyncHandler(async (req, res) => {
-  const booking = await Booking.findOne({
-    $or: [
-      { bookingId: req.params.id },
-      { _id: req.params.id }
-    ]
-  }).populate('packageId', 'name description');
 
-  if (!booking) {
-    res.status(404);
-    throw new Error('Booking not found');
-  }
-
-  res.json({
-    success: true,
-    booking,
-  });
-});
 
 // @desc Update booking
 // @route PUT /api/bookings/:id
@@ -714,5 +694,41 @@ export const getBookingStats = asyncHandler(async (req, res) => {
       completedBookings,
       totalRevenue: totalRevenue[0]?.total || 0,
     },
+  });
+});
+// @desc Get booking by ID or bookingId
+// @route GET /api/bookings/:id
+// @access Public
+export const getBookingById = asyncHandler(async (req, res) => {
+  console.log('🔍 Searching for booking with ID:', req.params.id);
+  
+  const searchId = req.params.id;
+  
+  let booking;
+  
+  // ✅ Check if it's a valid MongoDB ObjectId format (24 hex characters)
+  const isObjectId = /^[0-9a-fA-F]{24}$/.test(searchId);
+  
+  if (isObjectId) {
+    // Search by MongoDB _id
+    console.log('🔎 Searching by MongoDB ObjectId');
+    booking = await Booking.findById(searchId).populate('packageId', 'name description');
+  } else {
+    // Search by custom bookingId (string like "YALA-xxxxx")
+    console.log('🔎 Searching by custom bookingId');
+    booking = await Booking.findOne({ bookingId: searchId }).populate('packageId', 'name description');
+  }
+
+  if (!booking) {
+    console.log('❌ Booking not found');
+    res.status(404);
+    throw new Error('Booking not found');
+  }
+
+  console.log('✅ Booking found:', booking.bookingId);
+
+  res.json({
+    success: true,
+    booking,
   });
 });
