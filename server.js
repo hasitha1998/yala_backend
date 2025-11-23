@@ -168,6 +168,8 @@ app.use("/api", dateRoutes);
 // Available Dates Routes
 app.use("/api/available-dates", availableDatesRoutes);
 
+app.use("/api/blogs", blogRoutes);
+
 // ==========================================
 // Error Handling Middleware
 // ==========================================
