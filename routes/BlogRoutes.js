@@ -2,17 +2,33 @@ import express from "express";
 import Blog from "../models/Blog.js";
 import multer from "multer";
 import path from "path";
+import fs from "fs";
+import { fileURLToPath } from 'url';
 import auth from "../middleware/auth.js";
 import admin from "../middleware/admin.js";
 
 const router = express.Router();
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// ========================================
+// ENSURE UPLOAD DIRECTORY EXISTS
+// ========================================
+const uploadDir = path.join(__dirname, '../uploads/blogs');
+if (!fs.existsSync(uploadDir)) {
+  console.log('📁 Creating uploads/blogs directory...');
+  fs.mkdirSync(uploadDir, { recursive: true });
+  console.log('✅ Directory created');
+}
 
 // ========================================
 // MULTER CONFIGURATION
 // ========================================
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/blogs/");
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
@@ -41,16 +57,17 @@ const upload = multer({
 // PUBLIC ROUTES (No Authentication)
 // ========================================
 
-// Get all published blogs (PUBLIC)
+// Get all blogs (PUBLIC - shows only published for non-authenticated users)
 router.get("/", async (req, res) => {
   try {
-    console.log("📚 Fetching all blogs...");
+    console.log("📚 Fetching blogs...");
+    console.log("Auth header:", req.headers['x-auth-token'] ? 'Present' : 'None');
     
     const { status, category, search } = req.query;
     
     let query = {};
     
-    // If no status specified and no auth, only show published
+    // If no auth token, only show published blogs
     if (!req.headers['x-auth-token']) {
       query.status = 'published';
     } else if (status) {
@@ -263,36 +280,6 @@ router.patch("/:id/publish", [auth, admin], async (req, res) => {
   }
 });
 
-// Unpublish blog (ADMIN)
-router.patch("/:id/unpublish", [auth, admin], async (req, res) => {
-  try {
-    const blog = await Blog.findByIdAndUpdate(
-      req.params.id,
-      { status: "draft" },
-      { new: true }
-    );
-    
-    if (!blog) {
-      return res.status(404).json({
-        success: false,
-        message: "Blog post not found"
-      });
-    }
-    
-    res.json({
-      success: true,
-      message: "Blog unpublished successfully",
-      data: blog
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to unpublish blog",
-      error: error.message
-    });
-  }
-});
-
 // Delete blog post (ADMIN)
 router.delete("/:id", [auth, admin], async (req, res) => {
   try {
@@ -307,6 +294,15 @@ router.delete("/:id", [auth, admin], async (req, res) => {
       });
     }
     
+    // Delete associated image file if exists
+    if (blog.featuredImage?.url) {
+      const imagePath = path.join(__dirname, '..', blog.featuredImage.url);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+        console.log("🗑️ Deleted image file");
+      }
+    }
+    
     console.log("✅ Blog deleted");
     
     res.json({
@@ -318,40 +314,6 @@ router.delete("/:id", [auth, admin], async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to delete blog post",
-      error: error.message
-    });
-  }
-});
-
-// Get blog categories (PUBLIC)
-router.get("/meta/categories", async (req, res) => {
-  try {
-    const categories = await Blog.distinct("categories");
-    res.json({
-      success: true,
-      data: categories
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch categories",
-      error: error.message
-    });
-  }
-});
-
-// Get blog tags (PUBLIC)
-router.get("/meta/tags", async (req, res) => {
-  try {
-    const tags = await Blog.distinct("tags");
-    res.json({
-      success: true,
-      data: tags
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch tags",
       error: error.message
     });
   }
