@@ -94,20 +94,30 @@ export const getBlogById = async (req, res) => {
 export const createBlog = async (req, res) => {
   try {
     console.log("📝 Creating new blog post...");
-    console.log("Body:", req.body);
-    console.log("File:", req.file);
+    console.log("Request body:", req.body);
     
-    // Generate slug manually
-    const slug = req.body.title
+    // MANUALLY generate slug
+    let slug = req.body.title
       .toLowerCase()
       .replace(/[^\w\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
       .trim();
     
+    // Check for duplicate slug
+    let existingBlog = await Blog.findOne({ slug });
+    let counter = 1;
+    while (existingBlog) {
+      slug = `${slug}-${counter}`;
+      existingBlog = await Blog.findOne({ slug });
+      counter++;
+    }
+    
+    console.log("Generated unique slug:", slug);
+    
     const blogData = {
       title: req.body.title,
-      slug: slug, // ← Add this line
+      slug: slug, // ← EXPLICITLY SET SLUG
       excerpt: req.body.excerpt,
       content: req.body.content,
       categories: JSON.parse(req.body.categories || "[]"),
@@ -124,7 +134,7 @@ export const createBlog = async (req, res) => {
       };
     }
     
-    console.log("📦 Blog data with slug:", blogData);
+    console.log("Creating blog with data:", blogData);
     
     const blog = new Blog(blogData);
     await blog.save();
