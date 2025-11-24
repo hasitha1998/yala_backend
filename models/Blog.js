@@ -8,9 +8,9 @@ const blogSchema = new mongoose.Schema({
   },
   slug: {
     type: String,
-    required: true,
     unique: true,
     lowercase: true
+    // ❌ REMOVE "required: true" - will be auto-generated
   },
   excerpt: {
     type: String,
@@ -71,9 +71,9 @@ const blogSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Generate slug from title before saving
-blogSchema.pre('save', function(next) {
-  if (this.isModified('title')) {
+// ✅ Generate slug from title BEFORE validation
+blogSchema.pre('validate', function(next) {
+  if (this.title && (!this.slug || this.isModified('title'))) {
     this.slug = this.title
       .toLowerCase()
       .replace(/[^\w\s-]/g, '')
@@ -81,16 +81,19 @@ blogSchema.pre('save', function(next) {
       .replace(/-+/g, '-')
       .trim();
   }
-  
-  // Set publishedAt when status changes to published
+  next();
+});
+
+// ✅ Set publishedAt when status changes to published
+blogSchema.pre('save', function(next) {
   if (this.isModified('status') && this.status === 'published' && !this.publishedAt) {
     this.publishedAt = new Date();
   }
-  
   next();
 });
 
 // Index for searching
 blogSchema.index({ title: 'text', content: 'text', tags: 'text' });
+blogSchema.index({ slug: 1 }, { unique: true });
 
 export default mongoose.model('Blog', blogSchema);
