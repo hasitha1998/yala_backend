@@ -15,6 +15,7 @@ export const getAllBlogs = async (req, res) => {
     const { status, category, search } = req.query;
     let query = {};
     
+    // Only show published blogs to public
     if (!req.headers['x-auth-token']) {
       query.status = 'published';
     } else if (status) {
@@ -54,17 +55,12 @@ export const getAllBlogs = async (req, res) => {
   }
 };
 
-// Get single blog
+// Get single blog by ID
 export const getBlogById = async (req, res) => {
   try {
-    const { idOrSlug } = req.params;
-    let blog;
+    console.log("📖 Fetching blog:", req.params.id);
     
-    if (idOrSlug.match(/^[0-9a-fA-F]{24}$/)) {
-      blog = await Blog.findById(idOrSlug);
-    } else {
-      blog = await Blog.findOne({ slug: idOrSlug });
-    }
+    const blog = await Blog.findById(req.params.id);
     
     if (!blog) {
       return res.status(404).json({
@@ -73,8 +69,11 @@ export const getBlogById = async (req, res) => {
       });
     }
     
+    // Increment views
     blog.views = (blog.views || 0) + 1;
     await blog.save();
+    
+    console.log("✅ Blog found:", blog.title);
     
     res.json({
       success: true,
@@ -93,31 +92,14 @@ export const getBlogById = async (req, res) => {
 // Create blog
 export const createBlog = async (req, res) => {
   try {
-    console.log("📝 Creating new blog post...");
+    console.log("\n" + "=".repeat(60));
+    console.log("📝 CREATING NEW BLOG POST");
+    console.log("=".repeat(60));
     console.log("Request body:", req.body);
-    
-    // MANUALLY generate slug
-    let slug = req.body.title
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim();
-    
-    // Check for duplicate slug
-    let existingBlog = await Blog.findOne({ slug });
-    let counter = 1;
-    while (existingBlog) {
-      slug = `${slug}-${counter}`;
-      existingBlog = await Blog.findOne({ slug });
-      counter++;
-    }
-    
-    console.log("Generated unique slug:", slug);
+    console.log("Request file:", req.file ? req.file.filename : "No file");
     
     const blogData = {
       title: req.body.title,
-      slug: slug, // ← EXPLICITLY SET SLUG
       excerpt: req.body.excerpt,
       content: req.body.content,
       categories: JSON.parse(req.body.categories || "[]"),
@@ -126,20 +108,26 @@ export const createBlog = async (req, res) => {
       author: JSON.parse(req.body.author || '{"name":"Yala Safari Admin"}'),
     };
     
+    // Add featured image if uploaded
     if (req.file) {
       blogData.featuredImage = {
         url: `/uploads/blogs/${req.file.filename}`,
         alt: req.body.featuredImageAlt || req.body.title,
         caption: req.body.featuredImageCaption || ""
       };
+      console.log("🖼️ Featured image:", blogData.featuredImage.url);
     }
     
-    console.log("Creating blog with data:", blogData);
+    console.log("📦 Blog data:", blogData);
     
     const blog = new Blog(blogData);
     await blog.save();
     
-    console.log("✅ Blog created:", blog._id);
+    console.log("✅ Blog created successfully!");
+    console.log("   - ID:", blog._id);
+    console.log("   - Title:", blog.title);
+    console.log("   - Status:", blog.status);
+    console.log("=".repeat(60) + "\n");
     
     res.status(201).json({
       success: true,
@@ -147,7 +135,11 @@ export const createBlog = async (req, res) => {
       data: blog
     });
   } catch (error) {
-    console.error("❌ Error creating blog:", error);
+    console.error("\n❌ ERROR CREATING BLOG:");
+    console.error("   Message:", error.message);
+    console.error("   Stack:", error.stack);
+    console.error("=".repeat(60) + "\n");
+    
     res.status(500).json({
       success: false,
       message: "Failed to create blog post",
@@ -170,6 +162,7 @@ export const updateBlog = async (req, res) => {
       status: req.body.status,
     };
     
+    // Add featured image if uploaded
     if (req.file) {
       updateData.featuredImage = {
         url: `/uploads/blogs/${req.file.filename}`,
@@ -191,7 +184,7 @@ export const updateBlog = async (req, res) => {
       });
     }
     
-    console.log("✅ Blog updated");
+    console.log("✅ Blog updated:", blog.title);
     
     res.json({
       success: true,
@@ -211,6 +204,8 @@ export const updateBlog = async (req, res) => {
 // Publish blog
 export const publishBlog = async (req, res) => {
   try {
+    console.log("📢 Publishing blog:", req.params.id);
+    
     const blog = await Blog.findById(req.params.id);
     
     if (!blog) {
@@ -223,6 +218,8 @@ export const publishBlog = async (req, res) => {
     blog.status = "published";
     blog.publishedAt = new Date();
     await blog.save();
+    
+    console.log("✅ Blog published:", blog.title);
     
     res.json({
       success: true,
@@ -253,6 +250,7 @@ export const deleteBlog = async (req, res) => {
       });
     }
     
+    // Delete featured image file if exists
     if (blog.featuredImage?.url) {
       const imagePath = path.join(__dirname, '..', blog.featuredImage.url);
       if (fs.existsSync(imagePath)) {
@@ -261,7 +259,7 @@ export const deleteBlog = async (req, res) => {
       }
     }
     
-    console.log("✅ Blog deleted");
+    console.log("✅ Blog deleted:", blog.title);
     
     res.json({
       success: true,

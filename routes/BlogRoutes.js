@@ -66,7 +66,7 @@ const upload = multer({
 // PUBLIC ROUTES
 // ========================================
 router.get("/", getAllBlogs);
-router.get("/:idOrSlug", getBlogById);
+router.get("/:id", getBlogById);  // ✅ Only use ID now
 
 // ========================================
 // ADMIN ROUTES
