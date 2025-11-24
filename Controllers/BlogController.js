@@ -97,8 +97,17 @@ export const createBlog = async (req, res) => {
     console.log("Body:", req.body);
     console.log("File:", req.file);
     
+    // Generate slug manually
+    const slug = req.body.title
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
+    
     const blogData = {
       title: req.body.title,
+      slug: slug, // ← Add this line
       excerpt: req.body.excerpt,
       content: req.body.content,
       categories: JSON.parse(req.body.categories || "[]"),
@@ -114,6 +123,8 @@ export const createBlog = async (req, res) => {
         caption: req.body.featuredImageCaption || ""
       };
     }
+    
+    console.log("📦 Blog data with slug:", blogData);
     
     const blog = new Blog(blogData);
     await blog.save();

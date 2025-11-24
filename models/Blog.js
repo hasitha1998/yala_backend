@@ -8,9 +8,8 @@ const blogSchema = new mongoose.Schema({
   },
   slug: {
     type: String,
-    unique: true,
     lowercase: true
-    // ❌ REMOVE "required: true" - will be auto-generated
+    // NO "required: true" here!
   },
   excerpt: {
     type: String,
@@ -24,7 +23,6 @@ const blogSchema = new mongoose.Schema({
   author: {
     name: {
       type: String,
-      required: true,
       default: 'Yala Safari Admin'
     },
     bio: String
@@ -71,8 +69,12 @@ const blogSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// ✅ Generate slug from title BEFORE validation
+// Generate slug BEFORE validation runs
 blogSchema.pre('validate', function(next) {
+  console.log('🔧 Pre-validate hook running...');
+  console.log('Title:', this.title);
+  console.log('Current slug:', this.slug);
+  
   if (this.title && (!this.slug || this.isModified('title'))) {
     this.slug = this.title
       .toLowerCase()
@@ -80,11 +82,12 @@ blogSchema.pre('validate', function(next) {
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
       .trim();
+    console.log('Generated slug:', this.slug);
   }
   next();
 });
 
-// ✅ Set publishedAt when status changes to published
+// Set publishedAt when status changes
 blogSchema.pre('save', function(next) {
   if (this.isModified('status') && this.status === 'published' && !this.publishedAt) {
     this.publishedAt = new Date();
@@ -92,8 +95,8 @@ blogSchema.pre('save', function(next) {
   next();
 });
 
-// Index for searching
+// Indexes
 blogSchema.index({ title: 'text', content: 'text', tags: 'text' });
-blogSchema.index({ slug: 1 }, { unique: true });
+blogSchema.index({ slug: 1 });
 
 export default mongoose.model('Blog', blogSchema);
