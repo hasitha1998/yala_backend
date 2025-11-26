@@ -3,7 +3,6 @@ import mongoose from 'mongoose';
 const roomBookingSchema = new mongoose.Schema({
   bookingReference: {
     type: String,
-    required: true,
     unique: true
   },
   room: {
@@ -44,8 +43,7 @@ const roomBookingSchema = new mongoose.Schema({
     required: true
   },
   numberOfNights: {
-    type: Number,
-    required: true
+    type: Number
   },
   guests: {
     adults: {
