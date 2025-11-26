@@ -624,7 +624,25 @@ const sendBookingRejectedToCustomer = async (bookingData, reason = '') => {
 // ROOM BOOKING EMAILS
 // ========================================
 
-const sendRoomBookingConfirmation = async (booking, room) => {
+
+
+// ========================================
+// TAXI BOOKING EMAILS
+// ========================================
+
+
+
+// ========================================
+// ADMIN NOTIFICATION EMAIL
+// ========================================
+
+
+
+// ========================================
+// EXPORTS
+// ========================================
+
+export const sendRoomBookingConfirmation = async (booking, room) => {
   try {
     const transporter = createTransporter();
     
@@ -665,11 +683,11 @@ const sendRoomBookingConfirmation = async (booking, room) => {
               </div>
               
               <div class="detail-row">
-                <span class="label">Check-In:</span> ${formatDate(booking.checkIn)} at ${room.policies.checkIn}
+                <span class="label">Check-In:</span> ${formatDate(booking.checkIn)} at ${room.policies?.checkIn || '2:00 PM'}
               </div>
               
               <div class="detail-row">
-                <span class="label">Check-Out:</span> ${formatDate(booking.checkOut)} at ${room.policies.checkOut}
+                <span class="label">Check-Out:</span> ${formatDate(booking.checkOut)} at ${room.policies?.checkOut || '11:00 AM'}
               </div>
               
               <div class="detail-row">
@@ -677,7 +695,7 @@ const sendRoomBookingConfirmation = async (booking, room) => {
               </div>
               
               <div class="detail-row">
-                <span class="label">Guests:</span> ${booking.guests.adults} Adult(s), ${booking.guests.children} Child(ren)
+                <span class="label">Guests:</span> ${booking.guests.adults} Adult(s), ${booking.guests.children || 0} Child(ren)
               </div>
               
               <div class="detail-row">
@@ -696,7 +714,7 @@ const sendRoomBookingConfirmation = async (booking, room) => {
                 Email: ${booking.guestDetails.email}
               </p>
               
-              ${room.policies.cancellationPolicy ? `
+              ${room.policies?.cancellationPolicy ? `
               <p style="margin-top: 20px; font-size: 12px; color: #666;">
                 <strong>Cancellation Policy:</strong> ${room.policies.cancellationPolicy}
               </p>
@@ -717,12 +735,14 @@ const sendRoomBookingConfirmation = async (booking, room) => {
     console.log('✅ Room booking confirmation email sent to:', booking.guestDetails.email);
     
     // Send notification to admin
-    await sendAdminNotification('room', booking, room);
+    if (process.env.ADMIN_EMAIL) {
+      await sendAdminNotification('room', booking, room);
+    }
     
     return { success: true };
   } catch (error) {
     console.error('❌ Error sending room booking email:', error);
-    return { success: false, error: error.message };
+    throw error;
   }
 };
 
@@ -730,7 +750,7 @@ const sendRoomBookingConfirmation = async (booking, room) => {
 // TAXI BOOKING EMAILS
 // ========================================
 
-const sendTaxiBookingConfirmation = async (booking, taxi) => {
+export const sendTaxiBookingConfirmation = async (booking, taxi) => {
   try {
     const transporter = createTransporter();
     
@@ -787,12 +807,18 @@ const sendTaxiBookingConfirmation = async (booking, taxi) => {
               </div>
               
               <div class="detail-row">
-                <span class="label">Passengers:</span> ${booking.passengers.adults} Adult(s), ${booking.passengers.children} Child(ren)
+                <span class="label">Passengers:</span> ${booking.passengers.adults} Adult(s), ${booking.passengers.children || 0} Child(ren)
               </div>
               
               <div class="detail-row">
-                <span class="label">Luggage:</span> ${booking.passengers.luggage} Piece(s)
+                <span class="label">Luggage:</span> ${booking.passengers.luggage || 0} Piece(s)
               </div>
+              
+              ${booking.tripDetails.distance ? `
+              <div class="detail-row">
+                <span class="label">Distance:</span> ${booking.tripDetails.distance} km
+              </div>
+              ` : ''}
               
               <div class="detail-row">
                 <span class="label">Total Amount:</span> ${booking.pricing.currency} ${booking.pricing.totalAmount}
@@ -830,12 +856,14 @@ const sendTaxiBookingConfirmation = async (booking, taxi) => {
     console.log('✅ Taxi booking confirmation email sent to:', booking.customerDetails.email);
     
     // Send notification to admin
-    await sendAdminNotification('taxi', booking, taxi);
+    if (process.env.ADMIN_EMAIL) {
+      await sendAdminNotification('taxi', booking, taxi);
+    }
     
     return { success: true };
   } catch (error) {
     console.error('❌ Error sending taxi booking email:', error);
-    return { success: false, error: error.message };
+    throw error;
   }
 };
 
@@ -908,15 +936,10 @@ const sendAdminNotification = async (type, booking, item) => {
   }
 };
 
-// ========================================
-// EXPORTS
-// ========================================
-
 export {
   sendBookingPendingToAdmin,
   sendBookingPendingToCustomer,
   sendBookingConfirmedToCustomer,
   sendBookingRejectedToCustomer,
-  sendRoomBookingConfirmation,
-  sendTaxiBookingConfirmation
+  
 };

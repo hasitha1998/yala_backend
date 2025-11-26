@@ -1,7 +1,6 @@
-const express = require('express');
-const router = express.Router();
-const authMiddleware = require('../middleware/authMiddleware');
-const {
+import express from 'express';
+import authMiddleware from '../middleware/auth.js';
+import {
   createTaxiBooking,
   getAllTaxiBookings,
   getTaxiBookingById,
@@ -9,7 +8,9 @@ const {
   updateTaxiBooking,
   updateBookingStatus,
   cancelTaxiBooking
-} = require('../Controllers/taxiBookingController');
+} from '../Controllers/taxiBookingController.js';
+
+const router = express.Router();
 
 // Public routes
 router.post('/', createTaxiBooking);
@@ -22,4 +23,4 @@ router.put('/:id', authMiddleware, updateTaxiBooking);
 router.patch('/:id/status', authMiddleware, updateBookingStatus);
 router.delete('/:id', authMiddleware, cancelTaxiBooking);
 
-module.exports = router;
+export default router;

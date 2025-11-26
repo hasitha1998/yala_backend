@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const taxiSchema = new mongoose.Schema({
   vehicleType: {
@@ -83,4 +83,4 @@ const taxiSchema = new mongoose.Schema({
 // Index for searching
 taxiSchema.index({ vehicleName: 'text', description: 'text' });
 
-module.exports = mongoose.model('Taxi', taxiSchema);
+export default mongoose.model('Taxi', taxiSchema);

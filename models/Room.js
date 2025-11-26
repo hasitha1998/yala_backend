@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const roomSchema = new mongoose.Schema({
   name: {
@@ -86,4 +86,6 @@ const roomSchema = new mongoose.Schema({
 // Index for searching
 roomSchema.index({ name: 'text', description: 'text' });
 
-module.exports = mongoose.model('Room', roomSchema);
+const Room = mongoose.model('Room', roomSchema);
+
+export default Room;

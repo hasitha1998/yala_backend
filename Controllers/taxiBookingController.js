@@ -1,11 +1,11 @@
-const TaxiBooking = require('../models/TaxiBooking');
-const Taxi = require('../models/Taxi');
-const { sendTaxiBookingConfirmation } = require('../services/emailService');
+import TaxiBooking from '../models/TaxiBooking.js';
+import Taxi from '../models/Taxi.js';
+import { sendTaxiBookingConfirmation } from '../config/emailConfig.js';
 
 // @desc    Create taxi booking
 // @route   POST /api/taxi-bookings
 // @access  Public
-const createTaxiBooking = async (req, res) => {
+export const createTaxiBooking = async (req, res) => {
   try {
     const bookingData = req.body;
     
@@ -80,7 +80,7 @@ const createTaxiBooking = async (req, res) => {
 // @desc    Get all taxi bookings
 // @route   GET /api/admin/taxi-bookings
 // @access  Private (Admin)
-const getAllTaxiBookings = async (req, res) => {
+export const getAllTaxiBookings = async (req, res) => {
   try {
     const { status, startDate, endDate } = req.query;
     
@@ -120,7 +120,7 @@ const getAllTaxiBookings = async (req, res) => {
 // @desc    Get single taxi booking
 // @route   GET /api/taxi-bookings/:id
 // @access  Public
-const getTaxiBookingById = async (req, res) => {
+export const getTaxiBookingById = async (req, res) => {
   try {
     const booking = await TaxiBooking.findById(req.params.id).populate('taxi');
     
@@ -148,7 +148,7 @@ const getTaxiBookingById = async (req, res) => {
 // @desc    Get booking by reference
 // @route   GET /api/taxi-bookings/reference/:ref
 // @access  Public
-const getTaxiBookingByReference = async (req, res) => {
+export const getTaxiBookingByReference = async (req, res) => {
   try {
     const booking = await TaxiBooking.findOne({ 
       bookingReference: req.params.ref 
@@ -178,7 +178,7 @@ const getTaxiBookingByReference = async (req, res) => {
 // @desc    Update taxi booking
 // @route   PUT /api/admin/taxi-bookings/:id
 // @access  Private (Admin)
-const updateTaxiBooking = async (req, res) => {
+export const updateTaxiBooking = async (req, res) => {
   try {
     const booking = await TaxiBooking.findByIdAndUpdate(
       req.params.id,
@@ -211,7 +211,7 @@ const updateTaxiBooking = async (req, res) => {
 // @desc    Update booking status
 // @route   PATCH /api/admin/taxi-bookings/:id/status
 // @access  Private (Admin)
-const updateBookingStatus = async (req, res) => {
+export const updateBookingStatus = async (req, res) => {
   try {
     const { bookingStatus, paymentStatus } = req.body;
     
@@ -250,7 +250,7 @@ const updateBookingStatus = async (req, res) => {
 // @desc    Cancel taxi booking
 // @route   DELETE /api/admin/taxi-bookings/:id
 // @access  Private (Admin)
-const cancelTaxiBooking = async (req, res) => {
+export const cancelTaxiBooking = async (req, res) => {
   try {
     const booking = await TaxiBooking.findById(req.params.id);
     
@@ -278,14 +278,4 @@ const cancelTaxiBooking = async (req, res) => {
       error: error.message
     });
   }
-};
-
-module.exports = {
-  createTaxiBooking,
-  getAllTaxiBookings,
-  getTaxiBookingById,
-  getTaxiBookingByReference,
-  updateTaxiBooking,
-  updateBookingStatus,
-  cancelTaxiBooking
 };

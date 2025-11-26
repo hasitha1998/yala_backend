@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const taxiBookingSchema = new mongoose.Schema({
   bookingReference: {
@@ -132,4 +132,4 @@ taxiBookingSchema.pre('save', async function(next) {
   next();
 });
 
-module.exports = mongoose.model('TaxiBooking', taxiBookingSchema);
+export default mongoose.model('TaxiBooking', taxiBookingSchema);

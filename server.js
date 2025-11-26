@@ -37,6 +37,12 @@ import bookingRoutes from "./routes/BookingRoutes.js";
 import dateRoutes from "./routes/DateRoutes.js";
 import availableDatesRoutes from "./routes/AvailableDatesRoutes.js";
 
+
+import roomRoutes from './routes/RoomRoutes.js';
+import roomBookingRoutes from './routes/RoomBookingRoutes.js';
+import taxiRoutes from './routes/TaxiRoutes.js';
+import taxiBookingRoutes from './routes/TaxiBookingRoutes.js';
+
 // ========================================
 // 4. CONNECT TO DATABASE
 // ========================================
@@ -78,17 +84,6 @@ app.use(cors({
 }));
 
 // ==========================================
-// CORS Configuration (DEVELOPMENT MODE)
-// ==========================================
-// Uncomment this for development if you want to allow all origins
-// app.use(cors({
-//   origin: true, // ✅ Allow all origins (development only)
-//   credentials: true,
-//   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-//   allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"]
-// }));
-
-// ==========================================
 // Middleware
 // ==========================================
 app.use(bodyParser.json());
@@ -118,8 +113,19 @@ app.get("/", (req, res) => {
       adminEmail: process.env.ADMIN_EMAIL || 'Not configured'
     },
     endpoints: {
-      bookings: "/api/bookings",
+      // Safari Bookings
+      safariBookings: "/api/bookings",
       packages: "/api/packages",
+      
+      // Room Management
+      rooms: "/api/rooms",
+      roomBookings: "/api/room-bookings",
+      
+      // Taxi Management
+      taxis: "/api/taxis",
+      taxiBookings: "/api/taxi-bookings",
+      
+      // General
       admin: "/api/admin",
       blogs: "/api/blogs",
       contact: "/api/contact",
@@ -141,8 +147,24 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Booking Routes (Most Important - Place First)
+// ==========================================
+// BOOKING ROUTES
+// ==========================================
+
+// Safari Booking Routes
 app.use("/api/bookings", bookingRoutes);
+
+// Room Routes
+app.use("/api/rooms", roomRoutes);
+app.use("/api/room-bookings", roomBookingRoutes);
+
+// Taxi Routes
+app.use("/api/taxis", taxiRoutes);
+app.use("/api/taxi-bookings", taxiBookingRoutes);
+
+// ==========================================
+// OTHER ROUTES
+// ==========================================
 
 // Package Routes
 app.use("/api/packages", packageRoutes);
@@ -167,8 +189,6 @@ app.use("/api", dateRoutes);
 
 // Available Dates Routes
 app.use("/api/available-dates", availableDatesRoutes);
-
-app.use("/api/blogs", blogRoutes);
 
 // ==========================================
 // Error Handling Middleware
@@ -203,18 +223,33 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log("=".repeat(50));
   console.log("\n📍 Available Endpoints:");
-  console.log(`   Health Check:     http://localhost:${PORT}/api/health`);
-  console.log(`   Bookings:         http://localhost:${PORT}/api/bookings`);
-  console.log(`   Calculate Price:  http://localhost:${PORT}/api/bookings/calculate-price`);
-  console.log(`   Packages:         http://localhost:${PORT}/api/packages`);
-  console.log(`   Admin Login:      http://localhost:${PORT}/api/admin/login`);
-  console.log(`   Contact:          http://localhost:${PORT}/api/contact`);
-  console.log(`   Blogs:            http://localhost:${PORT}/api/blogs`);
-  console.log(`   Dashboard:        http://localhost:${PORT}/api/dashboard`);
-  console.log(`   Images:           http://localhost:${PORT}/api/images`);
+  console.log("\n🏨 ROOM MANAGEMENT:");
+  console.log(`   All Rooms:          http://localhost:${PORT}/api/rooms`);
+  console.log(`   Check Availability: http://localhost:${PORT}/api/rooms/availability/check`);
+  console.log(`   Room Bookings:      http://localhost:${PORT}/api/room-bookings`);
+  console.log(`   Calculate Price:    http://localhost:${PORT}/api/room-bookings/calculate-price`);
+  
+  console.log("\n🚕 TAXI MANAGEMENT:");
+  console.log(`   All Taxis:          http://localhost:${PORT}/api/taxis`);
+  console.log(`   Check Availability: http://localhost:${PORT}/api/taxis/availability/check`);
+  console.log(`   Taxi Bookings:      http://localhost:${PORT}/api/taxi-bookings`);
+  
+  console.log("\n🦁 SAFARI MANAGEMENT:");
+  console.log(`   Safari Bookings:    http://localhost:${PORT}/api/bookings`);
+  console.log(`   Calculate Price:    http://localhost:${PORT}/api/bookings/calculate-price`);
+  console.log(`   Packages:           http://localhost:${PORT}/api/packages`);
+  
+  console.log("\n⚙️  GENERAL:");
+  console.log(`   Health Check:       http://localhost:${PORT}/api/health`);
+  console.log(`   Admin Login:        http://localhost:${PORT}/api/admin/login`);
+  console.log(`   Contact:            http://localhost:${PORT}/api/contact`);
+  console.log(`   Blogs:              http://localhost:${PORT}/api/blogs`);
+  console.log(`   Dashboard:          http://localhost:${PORT}/api/dashboard`);
+  console.log(`   Images:             http://localhost:${PORT}/api/images`);
+  
   console.log("\n📧 Email Service:");
-  console.log(`   Provider:         ${process.env.RESEND_API_KEY ? 'Resend ✅' : 'Not configured ❌'}`);
-  console.log(`   Admin Email:      ${process.env.ADMIN_EMAIL || 'Not configured ❌'}`);
+  console.log(`   Provider:           ${process.env.RESEND_API_KEY ? 'Resend ✅' : 'Not configured ❌'}`);
+  console.log(`   Admin Email:        ${process.env.ADMIN_EMAIL || 'Not configured ❌'}`);
   console.log("\n" + "=".repeat(50) + "\n");
 });
 

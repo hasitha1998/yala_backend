@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const roomBookingSchema = new mongoose.Schema({
   bookingReference: {
@@ -106,4 +106,6 @@ roomBookingSchema.pre('save', async function(next) {
   next();
 });
 
-module.exports = mongoose.model('RoomBooking', roomBookingSchema);
+const RoomBooking = mongoose.model('RoomBooking', roomBookingSchema);
+
+export default RoomBooking;
