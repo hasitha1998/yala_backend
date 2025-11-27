@@ -22,6 +22,16 @@ const BookingSchema = new mongoose.Schema({
     required: true 
   },
   
+  // ✅ NEW: Customer Photo and Signature (Optional)
+  customerPhoto: {
+    type: String,  // URL/path to uploaded photo
+    required: false
+  },
+  customerSignature: {
+    type: String,  // URL/path to uploaded signature
+    required: false
+  },
+  
   // Booking Details - SIMPLIFIED (Private Luxury only)
   reservationType: { 
     type: String, 
@@ -63,8 +73,6 @@ const BookingSchema = new mongoose.Schema({
     min: 1,
     max: 7
   },
-  
-  // REMOVED: selectedSeats (no shared safari)
   
   // Meal Options
   mealOption: {

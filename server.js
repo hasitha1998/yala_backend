@@ -36,7 +36,7 @@ import imageRoutes from "./routes/ImageRoutes.js";
 import bookingRoutes from "./routes/BookingRoutes.js";
 import dateRoutes from "./routes/DateRoutes.js";
 import availableDatesRoutes from "./routes/AvailableDatesRoutes.js";
-
+import galleryRoutes from "./routes/GalleryRoutes.js"; // ✅ NEW
 
 import roomRoutes from './routes/RoomRoutes.js';
 import roomBookingRoutes from './routes/RoomBookingRoutes.js';
@@ -58,17 +58,16 @@ const __dirname = path.dirname(__filename);
 // CORS Configuration
 // ==========================================
 const allowedOrigins = [
-  "http://localhost:3000",           // ✅ Local development frontend
-  "http://localhost:5173",           // Vite default port
-  "http://localhost:5000",           // Backend local
-  "https://www.yalasafari.com",     // Production domain
-  "https://yalasafari.com",         // Production without www
-  "https://yala-safari-hspl.vercel.app",  // ✅ Vercel frontend
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "http://localhost:5000",
+  "https://www.yalasafari.com",
+  "https://yalasafari.com",
+  "https://yala-safari-hspl.vercel.app",
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.includes(origin)) {
@@ -124,6 +123,9 @@ app.get("/", (req, res) => {
       // Taxi Management
       taxis: "/api/taxis",
       taxiBookings: "/api/taxi-bookings",
+      
+      // Gallery
+      gallery: "/api/gallery",
       
       // General
       admin: "/api/admin",
@@ -190,6 +192,9 @@ app.use("/api", dateRoutes);
 // Available Dates Routes
 app.use("/api/available-dates", availableDatesRoutes);
 
+// ✅ Gallery Routes (NEW)
+app.use("/api/gallery", galleryRoutes);
+
 // ==========================================
 // Error Handling Middleware
 // ==========================================
@@ -238,6 +243,12 @@ app.listen(PORT, () => {
   console.log(`   Safari Bookings:    http://localhost:${PORT}/api/bookings`);
   console.log(`   Calculate Price:    http://localhost:${PORT}/api/bookings/calculate-price`);
   console.log(`   Packages:           http://localhost:${PORT}/api/packages`);
+  
+  console.log("\n🖼️  GALLERY:");
+  console.log(`   All Images:         http://localhost:${PORT}/api/gallery`);
+  console.log(`   Featured Images:    http://localhost:${PORT}/api/gallery/featured`);
+  console.log(`   By Category:        http://localhost:${PORT}/api/gallery/category/:category`);
+  console.log(`   Upload Image:       POST http://localhost:${PORT}/api/gallery`);
   
   console.log("\n⚙️  GENERAL:");
   console.log(`   Health Check:       http://localhost:${PORT}/api/health`);

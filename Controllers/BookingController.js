@@ -8,12 +8,13 @@ import {
   sendBookingRejectedToCustomer
 } from "../config/emailConfig.js";
 
-// @desc Create new booking (PRIVATE LUXURY ONLY)
+// @desc Create new booking (PRIVATE LUXURY ONLY) - WITH FILE UPLOADS
 // @route POST /api/bookings
 // @access Public
 export const createBooking = asyncHandler(async (req, res) => {
   try {
     console.log('📝 Creating booking with data:', req.body);
+    console.log('📎 Files received:', req.files);
     
     const bookingData = req.body;
 
@@ -34,7 +35,7 @@ export const createBooking = asyncHandler(async (req, res) => {
 
     const existingBooking = await Booking.findOne({
       date: requestedDate,
-      status: { $in: ['pending', 'confirmed'] }, // Check for pending or confirmed bookings
+      status: { $in: ['pending', 'confirmed'] },
     });
 
     if (existingBooking) {
@@ -62,6 +63,21 @@ export const createBooking = asyncHandler(async (req, res) => {
         success: false,
         message: 'NIC number is required for local visitors'
       });
+    }
+
+    // ✅ HANDLE FILE UPLOADS (Optional)
+    let customerPhoto = null;
+    let customerSignature = null;
+
+    if (req.files) {
+      if (req.files.customerPhoto) {
+        customerPhoto = `/uploads/bookings/${req.files.customerPhoto[0].filename}`;
+        console.log('📸 Customer photo uploaded:', customerPhoto);
+      }
+      if (req.files.customerSignature) {
+        customerSignature = `/uploads/bookings/${req.files.customerSignature[0].filename}`;
+        console.log('✍️ Customer signature uploaded:', customerSignature);
+      }
     }
 
     // ✅ USE PRICES FROM FRONTEND (already calculated with dynamic meal prices)
@@ -97,6 +113,8 @@ export const createBooking = asyncHandler(async (req, res) => {
       customerName: bookingData.customerName,
       customerEmail: bookingData.customerEmail,
       customerPhone: bookingData.customerPhone,
+      customerPhoto, // ✅ NEW
+      customerSignature, // ✅ NEW
       reservationType: 'private',
       park: bookingData.park,
       block: bookingData.block,
@@ -124,7 +142,7 @@ export const createBooking = asyncHandler(async (req, res) => {
       packageId: bookingData.packageId,
       packageName: bookingData.packageName,
       ...pricing,
-      status: 'pending', // ✅ Always starts as pending
+      status: 'pending',
       paymentStatus: 'pending',
     });
 
@@ -178,7 +196,9 @@ export const createBooking = asyncHandler(async (req, res) => {
         date: booking.date,
         timeSlot: booking.timeSlot,
         totalPrice: booking.totalPrice,
-        status: booking.status, // Will be 'pending'
+        status: booking.status,
+        customerPhoto: booking.customerPhoto,
+        customerSignature: booking.customerSignature,
       },
     });
   } catch (error) {
@@ -209,13 +229,11 @@ export const approveBooking = asyncHandler(async (req, res) => {
       });
     }
 
-    // Update status to confirmed
     booking.status = 'confirmed';
     const updatedBooking = await booking.save();
 
     console.log('✅ Booking approved:', booking.bookingId);
 
-    // Send confirmation email to customer
     const emailData = {
       bookingId: booking.bookingId,
       customerName: booking.customerName,
@@ -265,7 +283,6 @@ export const rejectBooking = asyncHandler(async (req, res) => {
       });
     }
 
-    // Update status to cancelled with reason
     booking.status = 'cancelled';
     if (reason) {
       booking.adminNotes = reason;
@@ -274,7 +291,6 @@ export const rejectBooking = asyncHandler(async (req, res) => {
 
     console.log('❌ Booking rejected:', booking.bookingId);
 
-    // Send rejection email to customer
     const emailData = {
       bookingId: booking.bookingId,
       customerName: booking.customerName,
@@ -302,15 +318,12 @@ export const rejectBooking = asyncHandler(async (req, res) => {
 // @desc Check date availability
 // @route GET /api/bookings/check-availability/:date
 // @access Public
-
 export const checkDateAvailability = asyncHandler(async (req, res) => {
   try {
     console.log('📅 Checking availability for date:', req.params.date);
     
-    // Parse the date parameter (handles various formats)
     const requestedDate = new Date(req.params.date);
     
-    // Validate date
     if (isNaN(requestedDate.getTime())) {
       return res.status(400).json({
         success: false,
@@ -318,16 +331,14 @@ export const checkDateAvailability = asyncHandler(async (req, res) => {
       });
     }
     
-    // Reset time to midnight for accurate comparison
     requestedDate.setHours(0, 0, 0, 0);
     
     console.log('🔍 Searching for bookings on:', requestedDate.toISOString());
 
-    // Check if there's any pending or confirmed booking for this date
     const existingBooking = await Booking.findOne({
       date: {
         $gte: requestedDate,
-        $lt: new Date(requestedDate.getTime() + 24 * 60 * 60 * 1000) // Next day
+        $lt: new Date(requestedDate.getTime() + 24 * 60 * 60 * 1000)
       },
       status: { $in: ['pending', 'confirmed'] },
     }).select('bookingId status date timeSlot');
@@ -384,7 +395,6 @@ export const getBookedDates = asyncHandler(async (req, res) => {
       .select('date status bookingId timeSlot')
       .sort({ date: 1 });
 
-    // Group bookings by date
     const bookedDates = bookings.map(booking => ({
       date: booking.date,
       status: booking.status,
@@ -427,8 +437,6 @@ export const getPendingBookings = asyncHandler(async (req, res) => {
     bookings,
   });
 });
-
-
 
 // @desc Update booking
 // @route PUT /api/bookings/:id
@@ -506,13 +514,11 @@ export const calculatePrice = asyncHandler(async (req, res) => {
   try {
     const { packageId, timeSlot, guideOption, visitorType, people, mealOption, includeBreakfast, includeLunch, selectedBreakfastItems, selectedLunchItems, vegOption, includeEggs } = req.body;
 
-    // Validate required fields
     if (!timeSlot || !guideOption || !visitorType || !people) {
       res.status(400);
       throw new Error('Missing required fields for price calculation');
     }
 
-    // Get package for pricing
     let pkg;
     if (packageId) {
       pkg = await Package.findById(packageId);
@@ -530,17 +536,13 @@ export const calculatePrice = asyncHandler(async (req, res) => {
     let guidePrice = 0;
     let mealPrice = 0;
 
-    // Ticket price
     const ticketPricePerPerson = visitorType === 'foreign' ? pkg.tickets.foreign : pkg.tickets.local;
     ticketPrice = ticketPricePerPerson * people;
 
-    // Luxury jeep price (only option)
     jeepPrice = pkg.jeep.luxury?.[timeSlot] || 0;
 
-    // Guide price
     guidePrice = pkg.guide[guideOption] || 0;
 
-    // Meal price - use dynamic meal options from package
     if (mealOption === 'with' && pkg.mealOptions) {
       if (includeBreakfast && selectedBreakfastItems && selectedBreakfastItems.length > 0) {
         const breakfastTotal = pkg.mealOptions.breakfast
@@ -696,6 +698,7 @@ export const getBookingStats = asyncHandler(async (req, res) => {
     },
   });
 });
+
 // @desc Get booking by ID or bookingId
 // @route GET /api/bookings/:id
 // @access Public
@@ -706,15 +709,12 @@ export const getBookingById = asyncHandler(async (req, res) => {
   
   let booking;
   
-  // ✅ Check if it's a valid MongoDB ObjectId format (24 hex characters)
   const isObjectId = /^[0-9a-fA-F]{24}$/.test(searchId);
   
   if (isObjectId) {
-    // Search by MongoDB _id
     console.log('🔎 Searching by MongoDB ObjectId');
     booking = await Booking.findById(searchId).populate('packageId', 'name description');
   } else {
-    // Search by custom bookingId (string like "YALA-xxxxx")
     console.log('🔎 Searching by custom bookingId');
     booking = await Booking.findOne({ bookingId: searchId }).populate('packageId', 'name description');
   }
