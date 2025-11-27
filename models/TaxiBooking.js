@@ -3,7 +3,6 @@ import mongoose from 'mongoose';
 const taxiBookingSchema = new mongoose.Schema({
   bookingReference: {
     type: String,
-    required: true,
     unique: true
   },
   taxi: {
