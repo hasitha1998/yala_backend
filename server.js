@@ -37,6 +37,7 @@ import bookingRoutes from "./routes/BookingRoutes.js";
 import dateRoutes from "./routes/DateRoutes.js";
 import availableDatesRoutes from "./routes/AvailableDatesRoutes.js";
 import galleryRoutes from "./routes/GalleryRoutes.js"; // ✅ NEW
+import reviewRoutes from "./routes/ReviewRoutes.js";
 
 import roomRoutes from './routes/RoomRoutes.js';
 import roomBookingRoutes from './routes/RoomBookingRoutes.js';
@@ -126,6 +127,7 @@ app.get("/", (req, res) => {
       
       // Gallery
       gallery: "/api/gallery",
+      reviews: "/api/reviews",
       
       // General
       admin: "/api/admin",
@@ -195,6 +197,8 @@ app.use("/api/available-dates", availableDatesRoutes);
 // ✅ Gallery Routes (NEW)
 app.use("/api/gallery", galleryRoutes);
 
+
+app.use("/api/reviews", reviewRoutes);
 // ==========================================
 // Error Handling Middleware
 // ==========================================
@@ -249,6 +253,17 @@ app.listen(PORT, () => {
   console.log(`   Featured Images:    http://localhost:${PORT}/api/gallery/featured`);
   console.log(`   By Category:        http://localhost:${PORT}/api/gallery/category/:category`);
   console.log(`   Upload Image:       POST http://localhost:${PORT}/api/gallery`);
+
+   // ✅ NEW SECTION - REVIEWS
+  console.log("\n⭐ REVIEWS:");
+  console.log(`   Create Review:      POST http://localhost:${PORT}/api/reviews`);
+  console.log(`   Published Reviews:  http://localhost:${PORT}/api/reviews/published`);
+  console.log(`   All Reviews (Admin):http://localhost:${PORT}/api/reviews/admin/all`);
+  console.log(`   Review Stats:       http://localhost:${PORT}/api/reviews/admin/stats`);
+  console.log(`   Approve Review:     PATCH http://localhost:${PORT}/api/reviews/:id/approve`);
+  console.log(`   Reject Review:      PATCH http://localhost:${PORT}/api/reviews/:id/reject`);
+  console.log(`   Toggle Featured:    PATCH http://localhost:${PORT}/api/reviews/:id/toggle-featured`);
+  console.log(`   Add Response:       POST http://localhost:${PORT}/api/reviews/:id/response`);
   
   console.log("\n⚙️  GENERAL:");
   console.log(`   Health Check:       http://localhost:${PORT}/api/health`);
