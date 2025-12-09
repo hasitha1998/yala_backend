@@ -18,6 +18,32 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+// ==========================================
+// PUBLIC ROUTES
+// ==========================================
+
+// Get gallery images (public - category: "gallery")
+router.get("/gallery", async (req, res) => {
+  try {
+    const images = await Image.find({ category: "gallery" })
+      .sort({ createdAt: -1 });
+    res.json({
+      success: true,
+      count: images.length,
+      images
+    });
+  } catch (err) {
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to fetch gallery images" 
+    });
+  }
+});
+
+// ==========================================
+// AUTHENTICATED ROUTES
+// ==========================================
+
 // Get all images (requires authentication)
 router.get("/", auth, async (req, res) => {
   try {
