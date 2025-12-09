@@ -8,7 +8,7 @@ import {
   updateTaxiBooking,
   updateBookingStatus,
   cancelTaxiBooking
-} from '../controllers/taxiBookingController.js';
+} from '../Controllers/taxiBookingController.js';
 
 const router = express.Router();
 

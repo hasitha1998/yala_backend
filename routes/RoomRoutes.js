@@ -8,7 +8,7 @@ import {
   updateRoomAvailability,
   deleteRoom,
   checkRoomAvailability
-} from '../controllers/roomController.js';
+} from '../Controllers/roomController.js';
 
 const router = express.Router();
 

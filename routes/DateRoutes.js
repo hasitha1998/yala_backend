@@ -1,5 +1,5 @@
 import express from "express";
-import { getAvailability } from "../controllers/DateController.js";
+import { getAvailability } from "../Controllers/DateController.js";
 import auth from "../middleware/auth.js";
 
 const router = express.Router();
