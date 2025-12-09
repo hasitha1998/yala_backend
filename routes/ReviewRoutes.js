@@ -11,7 +11,7 @@ import {
   addAdminResponse,
   deleteReview,
   getReviewStats
-} from "../Controllers/ReviewController.js";
+} from "../controllers/ReviewController.js";
 import auth from "../middleware/auth.js";
 import admin from "../middleware/admin.js";
 import multer from "multer";

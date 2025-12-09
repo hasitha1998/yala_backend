@@ -16,7 +16,7 @@ import {
   getBookedDates,
   getPendingBookings,
   getBookingStats
-} from "../Controllers/BookingController.js";
+} from "../controllers/BookingController.js";
 import auth from "../middleware/auth.js";
 import admin from "../middleware/admin.js";
 import multer from "multer";

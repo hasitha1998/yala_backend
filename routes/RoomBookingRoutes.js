@@ -9,7 +9,7 @@ import {
   updateRoomBooking,
   updateBookingStatus,
   cancelRoomBooking
-} from '../Controllers/roomBookingController.js';
+} from '../controllers/roomBookingController.js';
 
 const router = express.Router();
 

@@ -16,7 +16,7 @@ import {
   deleteMealOption,
   bulkUpdatePricing,
   getPackageAvailability, // ✅ ADD THIS IMPORT
-} from "../Controllers/PackageController.js";
+} from "../controllers/PackageController.js";
 import auth from "../middleware/auth.js";
 import admin from "../middleware/admin.js";
 

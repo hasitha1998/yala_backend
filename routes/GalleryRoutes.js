@@ -12,7 +12,7 @@ import {
   likeGalleryImage,
   bulkDeleteGalleryImages,
   getGalleryStats
-} from "../Controllers/GalleryController.js";
+} from "../controllers/GalleryController.js";
 import auth from "../middleware/auth.js";
 import admin from "../middleware/admin.js";
 import multer from "multer";
