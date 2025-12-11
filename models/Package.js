@@ -14,7 +14,6 @@ const PackageSchema = new mongoose.Schema(
     },
     park: {
       type: String,
-      required: true,
       enum: ['yala', 'bundala', 'udawalawe', 'Lunugamwehera'],
     },
     block: {
