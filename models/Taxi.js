@@ -4,7 +4,7 @@ const taxiSchema = new mongoose.Schema({
   vehicleType: {
     type: String,
     required: true,
-    enum: ['Sedan', 'SUV', 'Van', 'Mini Bus', 'Luxury Car']
+    enum: ['Car',  'Van', 'Bus', 'Jeep' ]
   },
   vehicleName: {
     type: String,

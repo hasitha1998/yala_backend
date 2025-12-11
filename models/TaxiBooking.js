@@ -37,7 +37,7 @@ const taxiBookingSchema = new mongoose.Schema({
     serviceType: {
       type: String,
       required: true,
-      enum: ['Airport Transfer', 'City Tour', 'Point to Point', 'Full Day Rental', 'Custom']
+      enum: ['Airport Transfer', 'City Transfer', 'Full Day', 'Hourly']
     },
     pickupLocation: {
       type: String,
