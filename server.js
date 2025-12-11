@@ -65,6 +65,7 @@ const allowedOrigins = [
   "https://www.yalasafari.com",
   "https://yalasafari.com",
   "https://yala-safari-hspl.vercel.app",
+  "https://www.yalavibe.com",
 ];
 
 app.use(cors({
